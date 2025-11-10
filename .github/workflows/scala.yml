@@ -6,33 +6,28 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  contents: read
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: todo_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
 
     steps:
     - uses: actions/checkout@v4
     
-    - name: Make generate script executable
-      run: chmod +x scripts/generate-docker.sh
-      
-    - name: Generate Docker configuration
-      run: ./scripts/generate-docker.sh
-      
-    - name: Start Docker containers
-      run: docker-compose up -d
-      
-    - name: Wait for database to be ready
-      run: |
-        timeout 60s bash -c 'until docker-compose exec db pg_isready; do
-          echo "Waiting for database..."
-          sleep 5
-        done'
-      
     - name: Set up JDK 11
       uses: actions/setup-java@v4
       with:
@@ -43,13 +38,11 @@ jobs:
     - name: Run tests
       run: sbt test
       env:
-        # Добавьте переменные окружения если нужно
+        DB_URL: jdbc:postgresql://localhost:5432/todo_test
+        DB_USER: test_user
+        DB_PASSWORD: test_password
         DB_HOST: localhost
         DB_PORT: 8080
-        
-    - name: Stop Docker containers
-      if: always()
-      run: docker-compose down
 
     - name: Upload dependency graph
       uses: scalacenter/sbt-dependency-submission@ab086b50c947c9774b70f39fc7f6e20ca2706c91
