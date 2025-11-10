@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # продовая среда
+  postgres-prod-like:
+    image: postgres:15
+    container_name: todo-postgres-prod
+    environment:
+      POSTGRES_DB: todo_app
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_password_123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ../postgres/migrations:/docker-entrypoint-initdb.d
+    command: >
+      postgres 
+      -c shared_preload_libraries=pg_stat_statements 
+      -c pg_stat_statements.track=all 
+      -c max_connections=200
+      -c shared_buffers=256MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d todo_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - todo-network
+
+  # тестовая среда
+  postgres-test:
+    image: postgres:15
+    container_name: todo-postgres-test
+    environment:
+      POSTGRES_DB: todo_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password_123
+    ports:
+      - "5433:5432"
+    volumes:
+      - ../postgres/migrations:/docker-entrypoint-initdb.d
+    command: >
+      postgres 
+      -c max_connections=100
+      -c shared_buffers=128MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d todo_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - todo-network
+
+  # Мониторинг (опционально) - только для прода
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: todo-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@todo.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres-prod-like
+    networks:
+      - todo-network
+
+volumes:
+  postgres_prod_data:  # Только для prod-like
+
+networks:
+  todo-network:
+    driver: bridge

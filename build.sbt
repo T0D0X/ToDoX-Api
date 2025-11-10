@@ -1,0 +1,37 @@
+ThisBuild / version := "0.1.0-SNAPSHOT"
+
+ThisBuild / scalaVersion := "3.3.7"
+val zioVersion = "2.1.22"
+val doobieVersion = "1.0.0-RC10"
+val testContainersVersion = "0.43.6"
+val tapirVersion = "1.12.2"
+
+libraryDependencies ++= Seq(
+		"org.postgresql" % "postgresql" % "42.7.8",
+
+		"dev.zio" %% "zio" % zioVersion,
+		"dev.zio" %% "zio-streams" % zioVersion,
+
+		"dev.zio" %% "zio-json" % "0.7.45",
+		"dev.zio" %% "zio-interop-cats" % "23.1.0.5",
+
+		"org.tpolecat" %% "doobie-postgres" % doobieVersion,
+
+		"com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % tapirVersion,
+		"com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
+		"com.softwaremill.sttp.tapir" %% "tapir-json-zio" % tapirVersion,
+
+		"org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
+		"dev.zio" %% "zio-test" % zioVersion,
+		"dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+		"com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
+		"org.testcontainers" % "postgresql" % "1.21.3" % Test,
+		"org.slf4j" % "slf4j-simple" % "2.0.17" % Test
+)
+
+lazy val root = (project in file("."))
+.settings(
+		name := "ToDoX-Api"
+)
+
+testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")

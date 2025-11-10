@@ -1,0 +1,31 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <ScalaCodeStyleSettings>
+      <option name="importLayout">
+        <array>
+          <option value="base package imports" />
+          <option value="_______ blank line _______" />
+          <option value="all other imports" />
+          <option value="_______ blank line _______" />
+          <option value="scala" />
+          <option value="java" />
+          <option value="javax" />
+        </array>
+      </option>
+      <option name="SPACE_BEFORE_INFIX_OPERATOR_LIKE_METHOD_CALL_PARENTHESES" value="false" />
+      <option name="SPACE_BEFORE_TYPE_PARAMETER_LEADING_CONTEXT_BOUND_COLON_HK" value="false" />
+      <option name="SPACE_BEFORE_TYPE_PARAMETER_REST_CONTEXT_BOUND_COLONS" value="false" />
+    </ScalaCodeStyleSettings>
+    <codeStyleSettings language="Scala">
+      <option name="SPACE_BEFORE_IF_PARENTHESES" value="false" />
+      <option name="SPACE_BEFORE_WHILE_PARENTHESES" value="false" />
+      <option name="SPACE_BEFORE_FOR_PARENTHESES" value="false" />
+      <indentOptions>
+        <option name="INDENT_SIZE" value="4" />
+        <option name="CONTINUATION_INDENT_SIZE" value="0" />
+        <option name="USE_TAB_CHARACTER" value="true" />
+        <option name="SMART_TABS" value="true" />
+      </indentOptions>
+    </codeStyleSettings>
+  </code_scheme>
+</component>
