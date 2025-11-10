@@ -23,7 +23,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5433:5432
+          - 8080:5432
 
     steps:
     - uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
         DB_USER: test_user
         DB_PASSWORD: test_password
         DB_HOST: localhost
-        DB_PORT: 8080
+        DB_PORT: 5433
 
     - name: Upload dependency graph
       uses: scalacenter/sbt-dependency-submission@ab086b50c947c9774b70f39fc7f6e20ca2706c91
