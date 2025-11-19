@@ -23,6 +23,8 @@ object UpdateTodoRequest {
 						completeAt = None,
 						tags = Some(List("Name"))
 				)
+
+		def empty = UpdateTodoRequest(None, None, None, None, None)
 }
 
 case class CreateTodoRequest(
