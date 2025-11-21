@@ -5,12 +5,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import todos.errors.AppErrors.*
 import todos.generator.ToDoGenerators.*
-import todos.models.{Priority, TodoItem, UpdateTodoRequest}
+import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
 import todos.repository.TodoRepository
 import zio.{Exit, ZIO}
 import zio.Unsafe
 import zio.Runtime
 
+import java.time.Instant
 import java.util.UUID
 
 
@@ -93,10 +94,32 @@ class TodoServiceTest extends AnyFlatSpec with Matchers with MockFactory {
 				}
 		}
 
+		"create" should "Success operation" in new Testing {
+				todoRepository.getAllByUserId.expects(todoCreate.userId).returns(ZIO.succeed(List(todoItem)))
+				todoRepository.crateTodoItem.expects(*).returns(ZIO.unit)
+
+				unsafeRun(service.create(todoCreate)) shouldBe()
+		}
+
+		it should "User doesnt have" in new Testing {
+				todoRepository.getAllByUserId.expects(todoCreate.userId).returns(ZIO.succeed(List.empty))
+
+				val result = unsafeRun(service.create(todoCreate).exit)
+
+				result.isFailure shouldBe true
+				result match {
+						case Exit.Failure(cause) =>
+								cause.failureOption shouldBe Some(UserNotFoundError(todoCreate.userId.toString))
+						case Exit.Success(_) =>
+								fail("Expected failure but got success")
+				}
+		}
+
 
 		trait Testing {
 				val todoItem = generateUnsafe[TodoItem]
 				val todoUpdateEmpty = UpdateTodoRequest.empty
+				val todoCreate = generateUnsafe[CreateTodoRequest].copy(userId = todoItem.userId)
 				val id = generateUnsafe[UUID]
 				val todoRepository: TodoRepository = mock[TodoRepository]
 				val service = new TodoServiceImpl(todoRepository)

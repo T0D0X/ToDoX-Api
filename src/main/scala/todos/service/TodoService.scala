@@ -59,5 +59,12 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
 				todoRepository.getById(id)
 				.mapError(error => DatabaseOperationError("get", error))
 
-		override def create(createTodoRequest: CreateTodoRequest): Task[Unit] = ???
+		override def create(createTodoRequest: CreateTodoRequest): Task[Unit] =
+				for {
+						todoList <- todoRepository.getAllByUserId(createTodoRequest.userId)
+
+						_ <- ZIO.when(todoList.isEmpty)(ZIO.fail(UserNotFoundError(createTodoRequest.userId.toString)))
+
+						_ <- todoRepository.crateTodoItem(createTodoRequest.toToDoItem)
+				} yield ()
 }
