@@ -1,7 +1,5 @@
 package todos.errors
 
-import zio.json._
-
 /**
  * Иерархия ошибок приложения
  */
@@ -16,8 +14,8 @@ object AppErrors {
 		// ============ VALIDATION ERRORS ============
 		sealed trait ValidationError extends AppError
 
-		case class EmptyFieldError(fieldName: String) extends ValidationError {
-				override def message: String = s"Field '$fieldName' cannot be empty"
+		case class EmptyFieldError() extends ValidationError {
+				override def message: String = s"At least one field must be provided for update"
 				override def code: String = "VALIDATION_001"
 		}
 
@@ -53,4 +51,14 @@ object AppErrors {
 				override def message: String = s"User with id $userId not found"
 				override def code: String = "NOT_FOUND_002"
 		}
+
+		// ============ DATABASE ERRORS ============
+		sealed trait DatabaseError extends AppError
+
+		case class DatabaseOperationError(operation: String, cause: Throwable) extends DatabaseError {
+				override def message: String = s"Database error during $operation: ${cause.getMessage}"
+
+				override def code: String = "DB_001"
+		}
+
 }

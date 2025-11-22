@@ -1,16 +1,15 @@
 package todos.generator
 
-import todos.models.Priority
 import zio.*
 import zio.test.Gen
-import todos.models.TodoItem
+import todos.models.{CreateTodoRequest, Priority, TodoItem}
+
 import java.util.UUID
+import zio.UIO
+
 import java.time.Instant
 
 object ToDoGenerators {
-
-		def generate[A](implicit gen: Gen[Any, A]): UIO[A] =
-				gen.sample.map(_.value).runCollect.map(_.head)
 
 		implicit val genUUID: Gen[Any, UUID] = Gen.uuid
 
@@ -43,5 +42,23 @@ object ToDoGenerators {
 						completedAt <- Gen.option(genInstant)
 						tags <- genTags
 				} yield TodoItem(id, userId, description, priority, isComplete, createdAt, completedAt, tags)
+
+		implicit val genCreateTodoRequest: Gen[Any, CreateTodoRequest] =
+				for {
+						userId <- genUUID
+						priority <- genPriority
+						description <- genDescription
+						createdAt <- genInstant
+						completedAt <- Gen.option(genInstant)
+						tags <- genTags
+				} yield CreateTodoRequest(userId, description, priority, completedAt, tags)
+
+		def generate[A](implicit gen: Gen[Any, A]): UIO[A] =
+				gen.sample.map(_.value).runCollect.map(_.head)
+
+		def generateUnsafe[A](implicit gen: Gen[Any, A]): A =
+				zio.Unsafe.unsafe { implicit unsafe =>
+						zio.Runtime.default.unsafe.run(gen.sample.map(_.value).runCollect.map(_.head)).getOrThrow()
+				}
 
 }
