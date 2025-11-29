@@ -28,7 +28,7 @@ class TodoController(todoService: TodoService) {
 				getTodoEndpoint,
 		)
 
-		// GET /api/v1/todos/{id} - получить todo по ID
+		// GET /api/v1/todos/{id}
 		val getTodoEndpoint = baseEndpoint
 		.get
 		.in(path[UUID]("id"))
