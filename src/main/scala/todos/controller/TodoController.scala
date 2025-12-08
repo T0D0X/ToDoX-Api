@@ -1,27 +1,21 @@
 package todos.controller
 
 import sttp.tapir.endpoint
-import sttp.tapir.*
 import sttp.tapir.generic.auto.*
 import sttp.model.StatusCode
 import sttp.tapir.json.zio.jsonBody
+import sttp.tapir.server.ServerEndpoint
 import todos.errors.AppError
 import todos.errors.AppErrors.*
-import todos.models.{TodoItem, UpdateTodoRequest, CreateTodoRequest}
+import sttp.tapir.ztapir.*
+import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
 import todos.service.TodoService
-import zio.ZIO
 
 import java.util.UUID
 
 class TodoController(todoService: TodoService) {
-		implicit class EndpointOps[I, E, O](val endpoint: PublicEndpoint[I, E, O, Any]) {
-				def withServerLogic(logic: I => ZIO[Any, Throwable, Either[E, O]]): PublicEndpoint[I, E, O, Any] = {
-						endpoint.serverLogic(logic)
-						endpoint
-				}
-		}
 
-		val allEndpoints: List[AnyEndpoint] = List(
+		val allEndpoints: List[ZServerEndpoint[Nothing, Any]] = List(
 				getTodoEndpoint,
 				updateTodoEndpoint,
 				deleteTodoEndpoint,
@@ -29,23 +23,52 @@ class TodoController(todoService: TodoService) {
 		)
 
 		// GET /api/v1/todos/get/{id}
-		private val getTodoEndpoint = baseEndpoint
+		val getTodoEndpoint = baseEndpoint
 		.get
 		.in("get")
 		.in(path[UUID]("id"))
 		.out(jsonBody[TodoItem])
 		.description("Get todo item by ID")
-		.withServerLogic { id =>
+		.zServerLogic { id =>
 				todoService.get(id)
-				.map {
-						case Some(todo) => Right(todo)
-						case None => Left(TodoNotFoundError(id.toString))
-				}
-				.catchAll {
-						case ex: Throwable => ZIO.succeed(Left(DatabaseOperationError("get")))
+				.someOrFail(TodoNotFoundError(id.toString))
+				.mapError {
+						case _: TodoNotFoundError => TodoNotFoundError(id.toString)
+						case ex => DatabaseOperationError("get")
 				}
 		}
 
+		// DELETE /api/v1/todos/delete/{id}
+		val deleteTodoEndpoint = baseEndpoint
+		.delete
+		.in("delete")
+		.in(path[UUID]("id"))
+		.out(emptyOutput)
+		.description("Delete todo item")
+		.zServerLogic { id =>
+				todoService.delete(id)
+				.unit
+				.mapError {
+						case ex: AppError => ex
+						case ex: Throwable => DatabaseOperationError("delete")
+				}
+		}
+
+		// POST /api/v1/todos/create
+		val createTodoEndpoint = baseEndpoint
+		.post
+		.in("create")
+		.in(jsonBody[CreateTodoRequest])
+		.out(emptyOutput)
+		.description("Create new todo item")
+		.zServerLogic { createRequest =>
+				todoService.create(createRequest)
+				.unit
+				.mapError {
+						case ex: AppError => ex
+						case ex: Throwable => DatabaseOperationError("create")
+				}
+		}
 		// PUT /api/v1/todos/update/{id}
 		private val updateTodoEndpoint = baseEndpoint
 		.put
@@ -54,44 +77,12 @@ class TodoController(todoService: TodoService) {
 		.in(jsonBody[UpdateTodoRequest])
 		.out(emptyOutput)
 		.description("Update todo item")
-		.withServerLogic { case (id, updateRequest) =>
+		.zServerLogic { case (id, updateRequest) =>
 				todoService.update(id, updateRequest)
-				.as(Right(()))
-				.catchAll {
-						case ex: AppError => ZIO.succeed(Left(ex))
-						case ex: Throwable => ZIO.succeed(Left(DatabaseOperationError("update")))
-				}
-		}
-
-		// DELETE /api/v1/todos/delete/{id}
-		private val deleteTodoEndpoint = baseEndpoint
-		.delete
-		.in("delete")
-		.in(path[UUID]("id"))
-		.out(emptyOutput)
-		.description("Delete todo item")
-		.withServerLogic { id =>
-				todoService.delete(id)
-				.as(Right(()))
-				.catchAll {
-						case ex: AppError => ZIO.succeed(Left(ex))
-						case ex: Throwable => ZIO.succeed(Left(DatabaseOperationError("delete")))
-				}
-		}
-
-		// POST /api/v1/todos/create
-		private val createTodoEndpoint = baseEndpoint
-		.post
-		.in("create")
-		.in(jsonBody[CreateTodoRequest])
-		.out(emptyOutput)
-		.description("Create new todo item")
-		.withServerLogic { createRequest =>
-				todoService.create(createRequest)
-				.as(Right(()))
-				.catchAll {
-						case ex: AppError => ZIO.succeed(Left(ex))
-						case ex: Throwable => ZIO.succeed(Left(DatabaseOperationError("create")))
+				.unit
+				.mapError {
+						case ex: AppError => ex
+						case ex: Throwable => DatabaseOperationError("update")
 				}
 		}
 
@@ -107,7 +98,7 @@ class TodoController(todoService: TodoService) {
 		)
 }
 
-object TodoEndpoints {
+object TodoController {
 		def make(todoService: TodoService): TodoController =
 				new TodoController(todoService)
 }

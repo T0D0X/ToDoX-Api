@@ -58,10 +58,7 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
 
 		override def create(createTodoRequest: CreateTodoRequest): Task[Unit] =
 				for {
-						todoList <- todoRepository.getAllByUserId(createTodoRequest.userId)
-
-						_ <- ZIO.when(todoList.isEmpty)(ZIO.fail(UserNotFoundError(createTodoRequest.userId.toString)))
-
+						//TODO: сделать проверку что такой пользователь существует, пока что давать разрешать так делать
 						_ <- todoRepository.crateTodoItem(createTodoRequest.toToDoItem)
 				} yield ()
 }

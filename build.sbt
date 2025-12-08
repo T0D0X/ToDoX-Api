@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
 
 		"org.tpolecat" %% "doobie-postgres" % doobieVersion,
 
+		"com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
 		"com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % tapirVersion,
 		"com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
 		"com.softwaremill.sttp.tapir" %% "tapir-json-zio" % tapirVersion,
