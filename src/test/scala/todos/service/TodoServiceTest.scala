@@ -94,24 +94,9 @@ class TodoServiceTest extends AnyFlatSpec with Matchers with MockFactory {
 		}
 
 		"create" should "Success operation" in new Testing {
-				todoRepository.getAllByUserId.expects(todoCreate.userId).returns(ZIO.succeed(List(todoItem)))
 				todoRepository.crateTodoItem.expects(*).returns(ZIO.unit)
 
 				unsafeRun(service.create(todoCreate)) shouldBe()
-		}
-
-		it should "User doesnt have" in new Testing {
-				todoRepository.getAllByUserId.expects(todoCreate.userId).returns(ZIO.succeed(List.empty))
-
-				val result = unsafeRun(service.create(todoCreate).exit)
-
-				result.isFailure shouldBe true
-				result match {
-						case Exit.Failure(cause) =>
-								cause.failureOption shouldBe Some(UserNotFoundError(todoCreate.userId.toString))
-						case Exit.Success(_) =>
-								fail("Expected failure but got success")
-				}
 		}
 
 

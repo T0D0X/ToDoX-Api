@@ -4,7 +4,7 @@ ThisBuild / scalaVersion := "3.3.7"
 val zioVersion = "2.1.22"
 val doobieVersion = "1.0.0-RC11"
 val testContainersVersion = "0.43.6"
-val tapirVersion = "1.12.3"
+val tapirVersion = "1.13.2"
 
 libraryDependencies ++= Seq(
 		"org.postgresql" % "postgresql" % "42.7.8",

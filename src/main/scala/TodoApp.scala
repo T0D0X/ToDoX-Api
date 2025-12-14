@@ -1,32 +1,52 @@
 import doobie.*
-import org.http4s.HttpApp
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.controller.TodoController
-import todos.repository.{PostgresTodoRepository, TodoRepository}
+import todos.repository.PostgresTodoRepository
 import todos.service.TodoServiceImpl
-import zio.interop.catz.asyncInstance
-import cats.effect.kernel.Async
-import zio.{Scope, Task, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.http.*
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import zio.*
 import zio.http.Server
 
 import java.util.Properties
 
-object TodoApp extends zio.ZIOApp {
+object TodoApp extends ZIOAppDefault {
 
-		val serverConfig = ZLayer.succeed(Server.Config.default.port(8080))
 
-		override val bootstrap: ZLayer[ZIOAppArgs, Any, Server] =
-				serverConfig >>> Server.live
+		private val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] =
+				ZLayer.scoped {
+						ZIO.acquireRelease(
+								createTransactor
+						)(_ => ZIO.unit)
+				}
 
-		override def run: ZIO[Server with ZIOAppArgs with Scope, Any, Any] = {
-				for {
+		override def run: ZIO[Any, Throwable, Unit] = {
+				val program = for {
 						xa <- createTransactor
 						repository = PostgresTodoRepository(xa)
 						service = TodoServiceImpl.make(repository)
 						controller = new TodoController(service)
-						httpApp = ZioHttpInterpreter().toHttp(controller.allEndpoints)
-						_ <- Server.serve(httpApp)
+
+						apiEndpoints = controller.allEndpoints
+
+						swaggerEndpoints = SwaggerInterpreter()
+						.fromServerEndpoints[Task](
+								apiEndpoints,
+								"Todo API",
+								"1.0"
+						)
+						allEndpoints = apiEndpoints ++ swaggerEndpoints
+
+						app: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
+
+						_ <- Server.serve(app)
 				} yield ()
+
+				program.provide(
+						transactorLayer,
+						ZLayer.succeed(Server.Config.default.port(9090)),
+						Server.live,
+				)
 		}
 
 		private def createTransactor =
@@ -39,9 +59,13 @@ object TodoApp extends zio.ZIOApp {
 
 						Transactor.fromDriverManager[Task](
 								driver = "org.postgresql.Driver",
-								url = "jdbc:postgresql://localhost:5432/todo_test",
+								url = "jdbc:postgresql://localhost:8080/todo_test",
 								props,
 								logHandler = None
 						)
+				}.tapError { error =>
+						ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
+				}.tap { transactor =>
+						ZIO.logInfo("Database transactor created successfully")
 				}
 }

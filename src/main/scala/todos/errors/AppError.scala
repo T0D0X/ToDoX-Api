@@ -69,8 +69,8 @@ object AppErrors {
 				implicit val codec: JsonCodec[DatabaseErrorBase] = DeriveJsonCodec.gen[DatabaseErrorBase]
 		}
 
-		case class DatabaseOperationError(operation: String) extends DatabaseErrorBase {
-				override def message: String = s"Database error during $operation"
+		case class DatabaseOperationError(operation: String, mes: String) extends DatabaseErrorBase {
+				override def message: String = s"Database error during $operation  because $mes"
 
 				override def code: String = "DB_001"
 		}
