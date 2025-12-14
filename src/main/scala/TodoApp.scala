@@ -56,6 +56,10 @@ object TodoApp extends ZIOAppDefault {
 						dbName <- System.env("DB_NAME").map(_.getOrElse("todo_test"))
 						dbPort <- System.env("DB_PORT").map(_.getOrElse("8080"))
 
+						_ <- ZIO.logInfo(s"DB_HOST:$dbHost")
+						_ <- ZIO.logInfo(s"DB_NAME:$dbName")
+						_ <- ZIO.logInfo(s"DB_PORT:$dbPort")
+
 						transactor <- ZIO.attempt {
 								val props = new Properties()
 								props.setProperty("user", dbUser)

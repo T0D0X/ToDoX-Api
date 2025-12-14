@@ -19,6 +19,10 @@ WORKDIR /app
 # Копирование готового приложения из этапа сборки
 COPY --from=builder /app/target/universal/stage /app
 
-# Команда для запуска (зависит от типа вашего проекта)
-# Пример для Play Framework или приложения с запуском через скрипт:
-CMD ["./bin/todox-api"]
+# Установите переменную окружения для порта
+ENV PORT=9090
+
+RUN chmod +x /app/bin/todox-api
+
+# Используйте переменную PORT от Render, с fallback на 9090 для локальной среды
+CMD ["sh", "-c", "./bin/todox-api -Dhttp.port=${PORT:-9090} -Dhttp.address=0.0.0.0"]
