@@ -1,6 +1,6 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
-
 ThisBuild / scalaVersion := "3.3.7"
+
 val zioVersion = "2.1.22"
 val doobieVersion = "1.0.0-RC11"
 val testContainersVersion = "0.43.6"
@@ -40,5 +40,19 @@ lazy val root = (project in file("."))
 .settings(
 		name := "ToDoX-Api"
 )
+
+enablePlugins(JavaAppPackaging, DockerPlugin)
+
+// Базовые настройки Docker
+Docker / packageName := "todox-api"
+Docker / version := "1.0"
+dockerBaseImage := "eclipse-temurin:21-jdk"
+dockerExposedPorts := Seq(8080)
+
+
+Compile / mainClass := Some("TodoApp")
+
+bashScriptExtraDefines := Seq()
+
 
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")

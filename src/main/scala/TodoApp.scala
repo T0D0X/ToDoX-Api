@@ -5,6 +5,7 @@ import todos.repository.PostgresTodoRepository
 import todos.service.TodoServiceImpl
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import zio.interop.catz.asyncInstance
 import zio.*
 import zio.http.Server
 
@@ -12,23 +13,22 @@ import java.util.Properties
 
 object TodoApp extends ZIOAppDefault {
 
-
 		private val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] =
 				ZLayer.scoped {
-						ZIO.acquireRelease(
-								createTransactor
-						)(_ => ZIO.unit)
+						ZIO.acquireRelease(createTransactor)(_ => ZIO.unit)
 				}
 
 		override def run: ZIO[Any, Throwable, Unit] = {
 				val program = for {
+						port <- System.env("PORT").map(_.flatMap(_.toIntOption).getOrElse(9090))
 						xa <- createTransactor
 						repository = PostgresTodoRepository(xa)
 						service = TodoServiceImpl.make(repository)
 						controller = new TodoController(service)
 
-						apiEndpoints = controller.allEndpoints
+						_ <- ZIO.logInfo(s"Starting server on port $port")
 
+						apiEndpoints = controller.allEndpoints
 						swaggerEndpoints = SwaggerInterpreter()
 						.fromServerEndpoints[Task](
 								apiEndpoints,
@@ -39,33 +39,39 @@ object TodoApp extends ZIOAppDefault {
 
 						app: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 
-						_ <- Server.serve(app)
+						_ <- Server.serve(app).provide(
+								ZLayer.succeed(Server.Config.default.port(port)),
+								Server.live
+						)
 				} yield ()
 
-				program.provide(
-						transactorLayer,
-						ZLayer.succeed(Server.Config.default.port(9090)),
-						Server.live,
-				)
+				program.provide(transactorLayer)
 		}
 
-		private def createTransactor =
-				ZIO.attempt {
-						val props = new Properties()
-						props.setProperty("user", "test_user")
-						props.setProperty("password", "test_password")
+		private def createTransactor: ZIO[Any, Throwable, Transactor[Task]] = {
+				for {
+						dbUser <- System.env("DB_USER").map(_.getOrElse("test_user"))
+						dbPassword <- System.env("DB_PASSWORD").map(_.getOrElse("test_password"))
+						dbHost <- System.env("DB_HOST").map(_.getOrElse("localhost"))
+						dbName <- System.env("DB_NAME").map(_.getOrElse("todo_test"))
+						dbPort <- System.env("DB_PORT").map(_.getOrElse("8080"))
 
-						import zio.interop.catz.asyncInstance
-
-						Transactor.fromDriverManager[Task](
-								driver = "org.postgresql.Driver",
-								url = "jdbc:postgresql://localhost:8080/todo_test",
-								props,
-								logHandler = None
-						)
-				}.tapError { error =>
-						ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
-				}.tap { transactor =>
-						ZIO.logInfo("Database transactor created successfully")
-				}
+						transactor <- ZIO.attempt {
+								val props = new Properties()
+								props.setProperty("user", dbUser)
+								props.setProperty("password", dbPassword)
+								val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
+								Transactor.fromDriverManager[Task](
+										driver = "org.postgresql.Driver",
+										url = jdbcUrl,
+										props,
+										logHandler = None
+								)
+						}
+				} yield transactor
+		}.tapError { error =>
+				ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
+		}.tap { transactor =>
+				ZIO.logInfo("Database transactor created successfully")
+		}
 }
