@@ -1,3 +1,4 @@
+[![Scala CI](https://github.com/T0D0X/ToDoX-Api/actions/workflows/scala.yml/badge.svg)](https://github.com/T0D0X/ToDoX-Api/actions/workflows/scala.yml)
 # ToDoX-Api
 
 Простое и эффективное REST API для управления задачами, построенное на стеке **Scala 3 + ZIO 2 + ZIO HTTP + Doobie**.
@@ -28,7 +29,7 @@
 - Java 11+
 - sbt (только для разработки)
 
-Приложение будет доступно по адресу: `http://localhost:8080` (пока нет ⚠️)
+Приложение будет доступно по адресу: `http://localhost:9090` (пока нет ⚠️)
 
 ### Запуск контейнера
 Здесь находится окружение для интеграционных тестов в дальнейшем сделаем для локального запуска приложения
