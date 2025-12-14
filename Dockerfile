@@ -2,8 +2,8 @@ FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 COPY project/ ./project/
 COPY build.sbt ./
-COPY src/ ./src/               # Эта команда копирует ВСЕ исходники, включая TodoApp.scala
-RUN sbt assembly               # Сборка JAR из скопированных исходников
+COPY src/ ./src/
+RUN sbt assembly
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
