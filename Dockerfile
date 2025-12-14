@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk AS builder
+FROM hseeberger/scala-sbt:21.0.4_1.10.0_3.3.3 AS builder
 WORKDIR /app
 COPY project/ ./project/
 COPY build.sbt ./
