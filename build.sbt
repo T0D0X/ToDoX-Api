@@ -25,6 +25,8 @@ libraryDependencies ++= Seq(
 
 		"com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "1.12.5",
 		"org.http4s" %% "http4s-ember-server" % "0.23.33",
+		"org.flywaydb" % "flyway-core" % "11.19.0",
+		"org.flywaydb" % "flyway-database-postgresql" % "11.19.0",
 
 		"org.tpolecat" %% "doobie-scalatest" % doobieVersion % Test,
 		"dev.zio" %% "zio-test" % zioVersion,
