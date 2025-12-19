@@ -1,5 +1,4 @@
 import doobie.*
-import org.flywaydb.core.Flyway
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.controller.TodoController
 import todos.repository.PostgresTodoRepository
@@ -61,7 +60,6 @@ object TodoApp extends ZIOAppDefault {
 						_ <- ZIO.logInfo(s"DB_NAME:$dbName")
 						_ <- ZIO.logInfo(s"DB_PORT:$dbPort")
 						jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
-						_ <- runFlywayMigrations(jdbcUrl, dbUser, dbPassword)
 
 						_ <- ZIO.logInfo(s"Connecting to database:  $jdbcUrl")
 
@@ -81,25 +79,5 @@ object TodoApp extends ZIOAppDefault {
 				ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
 		}.tap { transactor =>
 				ZIO.logInfo("Database transactor created successfully")
-		}
-
-		private def runFlywayMigrations(
-		                               jdbcUrl: String,
-		                               user: String,
-		                               password: String
-		                               ): Task[Unit] = {
-				ZIO.attempt {
-						val flyway = Flyway.configure()
-						.dataSource(jdbcUrl, user, password)
-						.locations("classpath:postgres/migrations")
-						.baselineOnMigrate(true)
-						.load()
-
-						flyway.migrate()
-				}.tapError { e =>
-						ZIO.logError(s"Flyway migration failed: ${e.getMessage}")
-				}.tap { result =>
-						ZIO.logInfo(s"Flyway migrations applied: ${result.migrationsExecuted}")
-				}.unit
 		}
 }

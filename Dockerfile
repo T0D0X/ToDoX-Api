@@ -2,27 +2,45 @@
 FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 
-# Установка sbt (замените версию на актуальную)
+ENV DB_USER=test_user
+ENV DB_PASSWORD=test_password
+ENV DB_HOST=localhost
+ENV DB_NAME=todo_test
+ENV DB_PORT=8080
+
+# Установка sbt
 RUN apt-get update && \
     apt-get install -y curl gnupg2 && \
     curl -L "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz" | tar xz -C /usr/local && \
     ln -s /usr/local/sbt/bin/sbt /usr/bin/sbt
 
-# Копирование файлов проекта и сборка
-COPY . .
+COPY postgres/ /app/postgres/
+COPY build.sbt /app/
+COPY project /app/project
+COPY src /app/src
+COPY postgres/migrations /app/migrations/
+COPY . /app
 RUN sbt clean compile stage
 
 # Этап 2: Запуск (Runtime)
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Копирование готового приложения из этапа сборки
+# Установка postgresql-client
+RUN apt-get update && \
+    apt-get install -y postgresql-client && \
+    rm -rf /var/lib/apt/lists/*
+
+# Копирование готового приложения
 COPY --from=builder /app/target/universal/stage /app
 
-# Установите переменную окружения для порта
+# Копирование скриптов
+COPY scripts/run-migration.sh /app/
+RUN chmod +x /app/run-migration.sh
+
+# Порт по умолчанию
 ENV PORT=9090
 
-RUN chmod +x /app/bin/todox-api
-
-# Используйте переменную PORT от Render, с fallback на 9090 для локальной среды
-CMD ["sh", "-c", "./bin/todox-api -Dhttp.port=${PORT:-9090} -Dhttp.address=0.0.0.0"]
+# Точка входа
+ENTRYPOINT ["/app/run-migration.sh"]
+CMD ["./bin/todox-api", "-Dhttp.port=${PORT}", "-Dhttp.address=0.0.0.0"]

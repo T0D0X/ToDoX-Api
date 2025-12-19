@@ -1,4 +1,4 @@
-CREATE TABLE todo_items (
+CREATE TABLE IF NOT EXISTS todo_items (
     user_id UUID NOT NULL,
     id UUID PRIMARY KEY NOT NULL,
     description TEXT DEFAULT NULL,
