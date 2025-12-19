@@ -1,45 +1,64 @@
 # Этап 1: Сборка (Builder)
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 WORKDIR /app
 
-ENV DB_USER=test_user
-ENV DB_PASSWORD=test_password
-ENV DB_HOST=localhost
-ENV DB_NAME=todo_test
-ENV DB_PORT=8080
-
-# Установка sbt
+# Установка sbt (оптимизированная версия)
 RUN apt-get update && \
-    apt-get install -y curl gnupg2 && \
-    curl -L "https://github.com/sbt/sbt/releases/download/v1.10.0/sbt-1.10.0.tgz" | tar xz -C /usr/local && \
-    ln -s /usr/local/sbt/bin/sbt /usr/bin/sbt
+    apt-get install -y curl gnupg2 ca-certificates && \
+    curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | gpg --dearmor > /usr/share/keyrings/sbt.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/sbt.gpg] https://repo.scala-sbt.org/scalasbt/debian all main" > /etc/apt/sources.list.d/sbt.list && \
+    apt-get update && \
+    apt-get install -y sbt
 
-COPY postgres/ /app/postgres/
+# Оптимизация памяти для SBT
+ENV SBT_OPTS="-Xmx2G -Xss2M -XX:MaxMetaspaceSize=1G"
+ENV SBT_IVY_HOME=/root/.ivy2
+ENV SBT_HOME=/usr/share/sbt
+
+# Сначала копируем только файлы для зависимостей (кешируемый слой)
 COPY build.sbt /app/
-COPY project /app/project
-COPY src /app/src
-COPY postgres/migrations /app/migrations/
+COPY project/ /app/project/
+
+# Скачиваем зависимости
+RUN sbt update
+
+# Затем копируем всё остальное
 COPY . /app
+
+# Копируем миграции в отдельную папку
+COPY postgres/migrations /app/migrations/
+
+# Сборка
 RUN sbt clean compile stage
 
 # Этап 2: Запуск (Runtime)
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Установка postgresql-client
+# Установка postgresql-client для миграций
 RUN apt-get update && \
     apt-get install -y postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
-# Копирование готового приложения
+# Копирование готового приложения из builder этапа
 COPY --from=builder /app/target/universal/stage /app
+
+# Копирование миграций из builder этапа
+COPY --from=builder /app/migrations /app/migrations
 
 # Копирование скриптов
 COPY scripts/run-migration.sh /app/
-RUN chmod +x /app/run-migration.sh
+RUN chmod +x /app/run-migration.sh /app/bin/todox-api
 
 # Порт по умолчанию
 ENV PORT=9090
+
+# Переменные для БД (можно переопределить при запуске)
+ENV DB_USER=postgres
+ENV DB_PASSWORD=postgres
+ENV DB_HOST=localhost
+ENV DB_NAME=todo_db
+ENV DB_PORT=8080
 
 # Точка входа
 ENTRYPOINT ["/app/run-migration.sh"]
