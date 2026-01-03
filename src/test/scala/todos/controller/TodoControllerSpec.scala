@@ -195,6 +195,25 @@ object TodoControllerSpec extends ZIOSpecDefault {
 										response <- app(request)
 								} yield assert(response.status)(equalTo(Status.Ok))
 						}
+				),
+
+				suite("GET /api/v1/todos/user/{id}")(
+						test("возвращает 200 при успешном выполнении") {
+								val mockService = createMockService(
+										getByUserIdResult = ZIO.succeed(List(testTodo))
+								)
+								val app = createApp(mockService)
+								val request = Request.get(
+										decodeUrl(s"api/v1/todos/user/${testTodo.userId}")
+								)
+
+								for {
+										response <- app(request)
+								} yield assertTrue(
+										response.status == Status.Ok
+								)
+						},
+						//Todo: после реализации проверки есть ли такой пользователь добавить тест
 				)
 		)
 
@@ -203,7 +222,8 @@ object TodoControllerSpec extends ZIOSpecDefault {
 		                             getResult: Task[Option[TodoItem]] = ZIO.none,
 		                             createResult: Task[Unit] = ZIO.unit,
 		                             updateResult: Task[Unit] = ZIO.unit,
-		                             deleteResult: Task[Unit] = ZIO.unit
+		                             deleteResult: Task[Unit] = ZIO.unit,
+		                             getByUserIdResult: Task[List[TodoItem]] = ZIO.succeed(List.empty[TodoItem])
 		                             ): TodoService = new TodoService {
 				override def get(id: UUID): Task[Option[TodoItem]] = getResult
 
@@ -212,6 +232,8 @@ object TodoControllerSpec extends ZIOSpecDefault {
 				override def update(id: UUID, request: UpdateTodoRequest): Task[Unit] = updateResult
 
 				override def delete(id: UUID): Task[Unit] = deleteResult
+
+				override def getByUserId(userId: UUID): Task[List[TodoItem]] = getByUserIdResult
 		}
 
 		// метод для декодирования из строки в URL

@@ -99,6 +99,12 @@ class TodoServiceTest extends AnyFlatSpec with Matchers with MockFactory {
 				unsafeRun(service.create(todoCreate)) shouldBe()
 		}
 
+		"getByUserId" should "Success operation" in new Testing {
+				todoRepository.getAllByUserId.expects(*).returns(ZIO.succeed(List(todoItem)))
+
+				unsafeRun(service.getByUserId(todoItem.userId)) shouldBe List(todoItem)
+		}
+
 
 		trait Testing {
 				val todoItem = generateUnsafe[TodoItem]

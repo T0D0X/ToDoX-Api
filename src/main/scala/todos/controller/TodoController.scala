@@ -30,6 +30,7 @@ class TodoController(todoService: TodoService) {
 				updateTodoEndpoint,
 				deleteTodoEndpoint,
 				createTodoEndpoint,
+				getByUserIdTodoEndpoint,
 		)
 
 		// GET /api/v1/todos/get/{id}
@@ -93,6 +94,21 @@ class TodoController(todoService: TodoService) {
 				.mapError {
 						case ex: AppError => ex
 						case ex: Throwable => DatabaseOperationError("update", ex.toString)
+				}
+		}
+
+		// GET /api/v1/todos/user/{id}
+		lazy val getByUserIdTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
+		.get
+		.in("user")
+		.in(path[UUID]("id"))
+		.out(jsonBody[List[TodoItem]])
+		.description("Get all Todos by UserId")
+		.zServerLogic { userId =>
+				todoService.getByUserId(userId)
+				.mapError {
+						case ex: AppError => ex
+						case ex: Throwable => DatabaseOperationError("user", ex.toString)
 				}
 		}
 }
