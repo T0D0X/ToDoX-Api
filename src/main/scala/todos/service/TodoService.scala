@@ -15,6 +15,8 @@ trait TodoService {
 		def delete(id: UUID): Task[Unit]
 
 		def create(createTodoRequest: CreateTodoRequest): Task[Unit]
+
+		def getByUserId(userId: UUID): Task[List[TodoItem]]
 }
 
 class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
@@ -61,6 +63,9 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
 						//TODO: сделать проверку что такой пользователь существует, пока что давать разрешать так делать
 						_ <- todoRepository.crateTodoItem(createTodoRequest.toToDoItem)
 				} yield ()
+
+		override def getByUserId(userId: UUID): Task[List[TodoItem]] =
+				todoRepository.getAllByUserId(userId)
 }
 
 object TodoServiceImpl {

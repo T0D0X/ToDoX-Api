@@ -25,15 +25,8 @@ class TodoController(todoService: TodoService) {
 				)
 		)
 
-		val allEndpoints: List[ZServerEndpoint[Any, Any]] = List(
-				getTodoEndpoint,
-				updateTodoEndpoint,
-				deleteTodoEndpoint,
-				createTodoEndpoint,
-		)
-
 		// GET /api/v1/todos/get/{id}
-		lazy val getTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
+		val getTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
 		.get
 		.in("get")
 		.in(path[UUID]("id"))
@@ -49,7 +42,7 @@ class TodoController(todoService: TodoService) {
 		}
 
 		// DELETE /api/v1/todos/delete/{id}
-		lazy val deleteTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
+		val deleteTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
 		.delete
 		.in("delete")
 		.in(path[UUID]("id"))
@@ -65,7 +58,7 @@ class TodoController(todoService: TodoService) {
 		}
 
 		// POST /api/v1/todos/create
-		lazy val createTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
+		val createTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
 		.post
 		.in("create")
 		.in(jsonBody[CreateTodoRequest])
@@ -80,7 +73,7 @@ class TodoController(todoService: TodoService) {
 				}
 		}
 		// PUT /api/v1/todos/update/{id}
-		lazy val updateTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
+		val updateTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
 		.put
 		.in("update")
 		.in(path[UUID]("id"))
@@ -95,6 +88,29 @@ class TodoController(todoService: TodoService) {
 						case ex: Throwable => DatabaseOperationError("update", ex.toString)
 				}
 		}
+
+		// GET /api/v1/todos/user/{id}
+		val getByUserIdTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
+		.get
+		.in("user")
+		.in(path[UUID]("id"))
+		.out(jsonBody[List[TodoItem]])
+		.description("Get all Todos by UserId")
+		.zServerLogic { userId =>
+				todoService.getByUserId(userId)
+				.mapError {
+						case ex: AppError => ex
+						case ex: Throwable => DatabaseOperationError("user", ex.toString)
+				}
+		}
+
+		val allEndpoints: List[ZServerEndpoint[Any, Any]] = List(
+				getTodoEndpoint,
+				updateTodoEndpoint,
+				deleteTodoEndpoint,
+				createTodoEndpoint,
+				getByUserIdTodoEndpoint,
+		)
 }
 
 object TodoController {
