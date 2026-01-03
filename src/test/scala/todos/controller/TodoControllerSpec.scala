@@ -26,7 +26,7 @@ object TodoControllerSpec extends ZIOSpecDefault {
 				tags = List.empty,
 		)
 
-		def spec = suite("TodoController Http Tests")(
+		def spec = suite("TodoControllerSpec")(
 				suite("GET /api/v1/todos/get/{id}")(
 						test("возвращает 200 и todo при успешном поиске") {
 								val mockService = createMockService(
@@ -41,8 +41,10 @@ object TodoControllerSpec extends ZIOSpecDefault {
 								for {
 										response <- app(request)
 										body <- response.body.asString
-								} yield assert(response.status)(equalTo(Status.Ok)) &&
-								assert(body)(containsString(testId.toString))
+								} yield assertTrue(
+										response.status==Status.Ok,
+										body.contains(testId.toString)
+								)
 						},
 
 						test("возвращает 404 при отсутствии todo") {
@@ -57,7 +59,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.NotFound))
+								} yield assertTrue(
+										response.status==Status.NotFound,
+								)
 						},
 
 						test("возвращает 500 при ошибке базы данных") {
@@ -73,8 +77,11 @@ object TodoControllerSpec extends ZIOSpecDefault {
 								for {
 										response <- app(request)
 										body <- response.body.asString.option
-								} yield assert(response.status)(equalTo(Status.InternalServerError)) &&
-								assert(body)(isSome(containsString("DatabaseOperationError")))
+								} yield assertTrue(
+										response.status == Status.InternalServerError,
+										body.isDefined,
+										body.exists(_.contains("DatabaseOperationError")),
+								)
 						},
 
 						test("валидирует UUID параметр") {
@@ -87,7 +94,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.BadRequest))
+								} yield assertTrue(
+										response.status == Status.BadRequest
+								)
 						}
 				),
 
@@ -114,7 +123,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.Ok))
+								} yield assertTrue(
+										response.status == Status.Ok
+								)
 						},
 
 						test("возвращает 400 при некорректном JSON") {
@@ -128,7 +139,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.BadRequest))
+								} yield assertTrue(
+										response.status == Status.BadRequest
+								)
 						},
 
 						test("возвращает 400 при отсутствии Content-Type") {
@@ -142,7 +155,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.BadRequest))
+								} yield assertTrue(
+										response.status == Status.BadRequest
+								)
 						}
 				),
 
@@ -160,7 +175,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.Ok))
+								} yield assertTrue(
+										response.status == Status.Ok
+								)
 						},
 
 						test("возвращает 404 при обновлении несуществующего todo") {
@@ -176,7 +193,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.NotFound))
+								} yield assertTrue(
+										response.status == Status.NotFound
+								)
 						}
 				),
 
@@ -193,7 +212,9 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
 								for {
 										response <- app(request)
-								} yield assert(response.status)(equalTo(Status.Ok))
+								} yield assertTrue(
+										response.status == Status.Ok
+								)
 						}
 				),
 
