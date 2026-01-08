@@ -10,6 +10,7 @@ import zio.*
 import zio.http.Server
 
 import java.util.Properties
+import java.time.Instant
 
 object TodoApp extends ZIOAppDefault {
 
@@ -17,6 +18,37 @@ object TodoApp extends ZIOAppDefault {
 				ZLayer.scoped {
 						ZIO.acquireRelease(createTransactor)(_ => ZIO.unit)
 				}
+
+		val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
+				def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] = {
+						routes.transform[Env1] { h =>
+								Handler.scoped[Env1] {
+										handler { (request: Request) =>
+												val method = request.method.toString()
+												val path = request.url.path.toString
+
+												val logAnnotations = Set(
+														LogAnnotation("method", method),
+														LogAnnotation("path", path),
+												)
+
+												for {
+														start <- Clock.nanoTime
+														_ <- ZIO.logAnnotate(logAnnotations) {
+																ZIO.logInfo(s"$method $path")
+														}
+														response <- h(request)
+														end <- Clock.nanoTime
+														duration = (end - start) / 1_000_000.0
+														_ <- ZIO.logAnnotate(logAnnotations) {
+																ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
+														}
+												} yield response
+										}
+								}
+						}
+				}
+		}
 
 		override def run: ZIO[Any, Throwable, Unit] = {
 				val program = for {
@@ -37,11 +69,13 @@ object TodoApp extends ZIOAppDefault {
 						)
 						allEndpoints = apiEndpoints ++ swaggerEndpoints
 
-						app: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
+						baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 
-						_ <- Server.serve(app).provide(
+						finalApp = baseApp @@ loggingMiddleware
+
+						_ <- Server.serve(finalApp).provide(
 								ZLayer.succeed(Server.Config.default.port(port)),
-								Server.live
+								Server.live,
 						)
 				} yield ()
 
