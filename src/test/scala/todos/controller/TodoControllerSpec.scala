@@ -80,7 +80,7 @@ object TodoControllerSpec extends ZIOSpecDefault {
 								} yield assertTrue(
 										response.status == Status.InternalServerError,
 										body.isDefined,
-										body.exists(_.contains("DatabaseOperationError")),
+										body.exists(_.contains("DatabaseError")),
 								)
 						},
 

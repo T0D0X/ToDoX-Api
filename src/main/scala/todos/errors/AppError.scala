@@ -1,7 +1,5 @@
 package todos.errors
 
-import zio.json.{DeriveJsonCodec, JsonCodec}
-
 /**
  * Иерархия ошибок приложения
  */
@@ -15,10 +13,6 @@ object AppErrors {
 
 		// ============ VALIDATION ERRORS ============
 		sealed trait ValidationErrorBase extends AppError
-
-		object ValidationErrorBase {
-				implicit val codec: JsonCodec[ValidationErrorBase] = DeriveJsonCodec.gen[ValidationErrorBase]
-		}
 
 		case class EmptyFieldError() extends ValidationErrorBase {
 				override def message: String = s"At least one field must be provided for update"
@@ -48,10 +42,6 @@ object AppErrors {
 		// ============ NOT FOUND ERRORS ============
 		sealed trait NotFoundErrorBase extends AppError
 
-		object NotFoundErrorBase {
-				implicit val codec: JsonCodec[NotFoundErrorBase] = DeriveJsonCodec.gen[NotFoundErrorBase]
-		}
-
 		case class TodoNotFoundError(todoId: String) extends NotFoundErrorBase {
 				override def message: String = s"Todo with id $todoId not found"
 				override def code: String = "NOT_FOUND_001"
@@ -64,10 +54,6 @@ object AppErrors {
 
 		// ============ DATABASE ERRORS ============
 		sealed trait DatabaseErrorBase extends AppError
-
-		object DatabaseErrorBase {
-				implicit val codec: JsonCodec[DatabaseErrorBase] = DeriveJsonCodec.gen[DatabaseErrorBase]
-		}
 
 		case class DatabaseOperationError(operation: String, mes: String) extends DatabaseErrorBase {
 				override def message: String = s"Database error during $operation  because $mes"

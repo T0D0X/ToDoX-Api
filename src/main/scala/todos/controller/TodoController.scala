@@ -4,26 +4,83 @@ import sttp.tapir.endpoint
 import sttp.tapir.generic.auto.*
 import sttp.model.StatusCode
 import sttp.tapir.json.zio.jsonBody
-import todos.errors.AppError
-import todos.errors.AppErrors.*
+import todos.errors.{AppError, ErrorResponse}
+import todos.errors.AppErrors.TodoNotFoundError
+import todos.errors.ErrorResponse.*
 import sttp.tapir.ztapir.*
 import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
 import todos.service.TodoService
 
 import java.util.UUID
+import java.time.Instant
 
 class TodoController(todoService: TodoService) {
+
+		private val notFoundOutput =
+				jsonBody[ErrorResponse]
+				.description("Ресурс не найден")
+				.example(
+						ErrorResponse(
+								error = "TodoNotFoundError",
+								code = "NOT_FOUND",
+								message = "Todo with id 123e4567-e89b-12d3-a456-426614174000 not found",
+								timestamp = Instant.parse("2021-10-01T12:00:00Z")
+						)
+				)
+
+		private val validationOutput =
+						jsonBody[ErrorResponse]
+						.description("Ошибка валидации")
+						.example(
+								ErrorResponse(
+										error = "ValidationError",
+										code = "VALIDATION",
+										message = "Field 'title' cannot be empty",
+										timestamp = Instant.parse("2021-10-01T12:00:00Z")
+								)
+						)
+
+		private val databaseOutput =
+				jsonBody[ErrorResponse]
+				.description("Ошибка базы данных")
+				.example(
+						ErrorResponse(
+								error = "DatabaseError",
+								code = "DB",
+								message = "Database operation failed",
+								timestamp = Instant.parse("2021-10-01T12:00:00Z")
+						)
+				)
+
 
 		private val baseEndpoint = endpoint
 		.tag("todos")
 		.in("api" / "v1" / "todos")
 		.errorOut(
-				oneOf[AppError](
-						oneOfVariant(StatusCode.NotFound, jsonBody[NotFoundErrorBase].description("Not found")),
-						oneOfVariant(StatusCode.UnprocessableEntity, jsonBody[ValidationErrorBase].description("There is a logical error in the data.")),
-						oneOfVariant(StatusCode.InternalServerError, jsonBody[DatabaseErrorBase].description("Database error")),
+				oneOf[ErrorResponse](
+						oneOfVariantValueMatcher(StatusCode.NotFound, notFoundOutput) {
+								case ErrorResponse(_, code, _, _) if code.startsWith("NOT_FOUND") => true
+						},
+
+						oneOfVariantValueMatcher(StatusCode.UnprocessableEntity, validationOutput) {
+								case ErrorResponse(_, code, _, _) if code.startsWith("VALIDATION") => true
+						},
+
+						oneOfVariantValueMatcher(StatusCode.InternalServerError, databaseOutput) {
+								case ErrorResponse(_, code, _, _) if code.startsWith("DB") => true
+						},
 				)
 		)
+
+		private def toErrorResponse(throwable: Throwable): ErrorResponse = throwable match {
+				case error: AppError => ErrorResponse.fromAppError(error)
+				case ex: Throwable =>
+						ErrorResponse(
+								error = "DatabaseError",
+								code = "DB",
+								message = ex.getMessage,
+						)
+		}
 
 		// GET /api/v1/todos/get/{id}
 		val getTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
@@ -35,10 +92,7 @@ class TodoController(todoService: TodoService) {
 		.zServerLogic { id =>
 				todoService.get(id)
 				.someOrFail(TodoNotFoundError(id.toString))
-				.mapError {
-						case _: TodoNotFoundError => TodoNotFoundError(id.toString)
-						case ex => DatabaseOperationError("get", ex.toString)
-				}
+				.mapError(toErrorResponse)
 		}
 
 		// DELETE /api/v1/todos/delete/{id}
@@ -50,11 +104,7 @@ class TodoController(todoService: TodoService) {
 		.description("Delete todo item")
 		.zServerLogic { id =>
 				todoService.delete(id)
-				.unit
-				.mapError {
-						case ex: AppError => ex
-						case ex: Throwable => DatabaseOperationError("delete", ex.toString)
-				}
+				.mapError(toErrorResponse)
 		}
 
 		// POST /api/v1/todos/create
@@ -66,12 +116,9 @@ class TodoController(todoService: TodoService) {
 		.description("Create new todo item")
 		.zServerLogic { createRequest =>
 				todoService.create(createRequest)
-				.unit
-				.mapError {
-						case ex: AppError => ex
-						case ex: Throwable => DatabaseOperationError("create", ex.toString)
-				}
+				.mapError(toErrorResponse)
 		}
+
 		// PUT /api/v1/todos/update/{id}
 		val updateTodoEndpoint: ZServerEndpoint[Any, Any] = baseEndpoint
 		.put
@@ -82,11 +129,7 @@ class TodoController(todoService: TodoService) {
 		.description("Update todo item")
 		.zServerLogic { case (id, updateRequest) =>
 				todoService.update(id, updateRequest)
-				.unit
-				.mapError {
-						case ex: AppError => ex
-						case ex: Throwable => DatabaseOperationError("update", ex.toString)
-				}
+				.mapError(toErrorResponse)
 		}
 
 		// GET /api/v1/todos/user/{id}
@@ -98,10 +141,7 @@ class TodoController(todoService: TodoService) {
 		.description("Get all Todos by UserId")
 		.zServerLogic { userId =>
 				todoService.getByUserId(userId)
-				.mapError {
-						case ex: AppError => ex
-						case ex: Throwable => DatabaseOperationError("user", ex.toString)
-				}
+				.mapError(toErrorResponse)
 		}
 
 		val allEndpoints: List[ZServerEndpoint[Any, Any]] = List(
