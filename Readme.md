@@ -29,7 +29,7 @@
 - Java 11+
 - sbt (только для разработки)
 
-Swagger: `https://todox-api-c8r2.onrender.com/docs/#/`
+[Swagger ToDoX-Api](https://todox-api-c8r2.onrender.com/docs/#/)
 
 ### Запуск контейнера
 Здесь находится окружение для интеграционных тестов в дальнейшем сделаем для локального запуска приложения
