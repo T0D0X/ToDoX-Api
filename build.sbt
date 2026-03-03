@@ -40,7 +40,11 @@ libraryDependencies ++= Seq(
 
 lazy val root = (project in file("."))
 .settings(
-		name := "ToDoX-Api"
+		name := "ToDoX-Api",
+		scalacOptions ++= Seq(
+				"-Wunused:imports", //выдает предупрждения о неиспользованых  importов
+				"-Wconf:msg=unused import:e", // превращает warnings в errors
+		)
 )
 
 enablePlugins(JavaAppPackaging, DockerPlugin)
