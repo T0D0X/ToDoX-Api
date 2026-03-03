@@ -2,7 +2,6 @@ package todos.controller
 
 import zio.*
 import zio.test.*
-import zio.test.Assertion.*
 import zio.http.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.errors.AppErrors.*
