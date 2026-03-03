@@ -14,7 +14,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      - uses: .github/workflows/action.yml
+      - uses: .github/workflows/setup/action.yml
       - name: Check formatting
         run: sbt scalafmtCheckAll
 
@@ -23,7 +23,7 @@ jobs:
     needs: [build]
     steps:
       - uses: actions/checkout@v4
-      - uses: .github/workflows/action.yml
+      - uses: .github/workflows/setup/action.yml
       - name: Start test containers
         run: |
           chmod +x ./scripts/setup-docker.sh
