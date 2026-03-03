@@ -9,7 +9,7 @@ on:
         - '**'  # Все PR
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     
     steps:
@@ -25,13 +25,10 @@ jobs:
       - name: Setup SBT
         uses: sbt/setup-sbt@v1
 
-      - name: Install docker-compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
-          docker compose version
+      - name: Compile Project
+        run: sbt compileAll
 
-      - name: Run setup script
+      - name: Start containers
         run: |
           chmod +x ./scripts/setup-docker.sh
           ./scripts/setup-docker.sh
@@ -39,15 +36,8 @@ jobs:
       - name: Run tests
         run: sbt test
 
-  delete-branch:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
-    needs: build
-
-    steps:
-      - name: Delete branch
-        uses: SvanBoxel/delete-merged-branch@main
-        with:
-          delete_closed_pr: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cleanup
+        if: always()
+        run: |
+          chmod +x ./scripts/cleanup.sh
+          ./scripts/cleanup.sh

@@ -10,108 +10,105 @@ import zio.*
 import zio.http.Server
 
 import java.util.Properties
-import java.time.Instant
 
 object TodoApp extends ZIOAppDefault {
 
-		private val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] =
-				ZLayer.scoped {
-						ZIO.acquireRelease(createTransactor)(_ => ZIO.unit)
-				}
+  private val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] =
+    ZLayer.scoped {
+      ZIO.acquireRelease(createTransactor)(_ => ZIO.unit)
+    }
 
-		val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
-				def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] = {
-						routes.transform[Env1] { h =>
-								Handler.scoped[Env1] {
-										handler { (request: Request) =>
-												val method = request.method.toString()
-												val path = request.url.path.toString
+  val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
+    def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
+      routes.transform[Env1] { h =>
+        Handler.scoped[Env1] {
+          handler { (request: Request) =>
+            val method = request.method.toString()
+            val path   = request.url.path.toString
 
-												val logAnnotations = Set(
-														LogAnnotation("method", method),
-														LogAnnotation("path", path),
-												)
+            val logAnnotations = Set(
+              LogAnnotation("method", method),
+              LogAnnotation("path", path)
+            )
 
-												for {
-														start <- Clock.nanoTime
-														_ <- ZIO.logAnnotate(logAnnotations) {
-																ZIO.logInfo(s"$method $path")
-														}
-														response <- h(request)
-														end <- Clock.nanoTime
-														duration = (end - start) / 1_000_000.0
-														_ <- ZIO.logAnnotate(logAnnotations) {
-																ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
-														}
-												} yield response
-										}
-								}
-						}
-				}
-		}
+            for {
+              start <- Clock.nanoTime
+              _ <- ZIO.logAnnotate(logAnnotations) {
+                ZIO.logInfo(s"$method $path")
+              }
+              response <- h(request)
+              end      <- Clock.nanoTime
+              duration = (end - start) / 1_000_000.0
+              _ <- ZIO.logAnnotate(logAnnotations) {
+                ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
+              }
+            } yield response
+          }
+        }
+      }
+  }
 
-		override def run: ZIO[Any, Throwable, Unit] = {
-				val program = for {
-						port <- System.env("PORT").map(_.flatMap(_.toIntOption).getOrElse(9090))
-						xa <- createTransactor
-						repository = PostgresTodoRepository(xa)
-						service = TodoServiceImpl.make(repository)
-						controller = new TodoController(service)
+  override def run: ZIO[Any, Throwable, Unit] =
+    for {
+      port <- System.env("PORT").map(_.flatMap(_.toIntOption).getOrElse(9090))
+      xa   <- createTransactor
+      repository = PostgresTodoRepository(xa)
+      service    = TodoServiceImpl.make(repository)
+      controller = new TodoController(service)
 
-						_ <- ZIO.logInfo(s"Starting server on port $port")
+      _ <- ZIO.logInfo(s"Starting server on port $port")
 
-						apiEndpoints = controller.allEndpoints
-						swaggerEndpoints = SwaggerInterpreter()
-						.fromServerEndpoints[Task](
-								apiEndpoints,
-								"Todo API",
-								"1.0"
-						)
-						allEndpoints = apiEndpoints ++ swaggerEndpoints
+      apiEndpoints = controller.allEndpoints
+      swaggerEndpoints = SwaggerInterpreter()
+        .fromServerEndpoints[Task](
+          apiEndpoints,
+          "Todo API",
+          "1.0"
+        )
+      allEndpoints = apiEndpoints ++ swaggerEndpoints
 
-						baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
+      baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 
-						finalApp = baseApp @@ loggingMiddleware
+      finalApp = baseApp @@ loggingMiddleware
 
-						_ <- Server.serve(finalApp).provide(
-								ZLayer.succeed(Server.Config.default.port(port)),
-								Server.live,
-						)
-				} yield ()
+      _ <- Server
+        .serve(finalApp)
+        .provide(
+          ZLayer.succeed(Server.Config.default.port(port)),
+          Server.live
+        )
+    } yield ()
 
-				program.provide(transactorLayer)
-		}
+  private def createTransactor: ZIO[Any, Throwable, Transactor[Task]] = {
+    for {
+      dbUser     <- System.env("DB_USER").map(_.getOrElse("test_user"))
+      dbPassword <- System.env("DB_PASSWORD").map(_.getOrElse("test_password"))
+      dbHost     <- System.env("DB_HOST").map(_.getOrElse("localhost"))
+      dbName     <- System.env("DB_NAME").map(_.getOrElse("todo_test"))
+      dbPort     <- System.env("DB_PORT").map(_.getOrElse("8080"))
 
-		private def createTransactor: ZIO[Any, Throwable, Transactor[Task]] = {
-				for {
-						dbUser <- System.env("DB_USER").map(_.getOrElse("test_user"))
-						dbPassword <- System.env("DB_PASSWORD").map(_.getOrElse("test_password"))
-						dbHost <- System.env("DB_HOST").map(_.getOrElse("localhost"))
-						dbName <- System.env("DB_NAME").map(_.getOrElse("todo_test"))
-						dbPort <- System.env("DB_PORT").map(_.getOrElse("8080"))
+      _ <- ZIO.logInfo(s"DB_HOST:$dbHost")
+      _ <- ZIO.logInfo(s"DB_NAME:$dbName")
+      _ <- ZIO.logInfo(s"DB_PORT:$dbPort")
+      jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
 
-						_ <- ZIO.logInfo(s"DB_HOST:$dbHost")
-						_ <- ZIO.logInfo(s"DB_NAME:$dbName")
-						_ <- ZIO.logInfo(s"DB_PORT:$dbPort")
-						jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
+      _ <- ZIO.logInfo(s"Connecting to database:  $jdbcUrl")
 
-						_ <- ZIO.logInfo(s"Connecting to database:  $jdbcUrl")
-
-						transactor <- ZIO.attempt {
-								val props = new Properties()
-								props.setProperty("user", dbUser)
-								props.setProperty("password", dbPassword)
-								Transactor.fromDriverManager[Task](
-										driver = "org.postgresql.Driver",
-										url = jdbcUrl,
-										props,
-										logHandler = None
-								)
-						}
-				} yield transactor
-		}.tapError { error =>
-				ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
-		}.tap { transactor =>
-				ZIO.logInfo("Database transactor created successfully")
-		}
+      transactor <- ZIO.attempt {
+        val props = new Properties()
+        props.setProperty("user", dbUser)
+        props.setProperty("password", dbPassword)
+        Transactor.fromDriverManager[Task](
+          driver = "org.postgresql.Driver",
+          url = jdbcUrl,
+          props,
+          logHandler = None
+        )
+      }
+    } yield transactor
+  }.tapError { error =>
+    ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
+  }.tap { transactor =>
+    ZIO.logInfo("Database transactor created successfully")
+  }
 }
