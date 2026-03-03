@@ -62,3 +62,5 @@ bashScriptExtraDefines := Seq()
 
 
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+
+addCommandAlias("compileAll", ";compile;Test/compile")
