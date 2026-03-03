@@ -22,7 +22,7 @@ jobs:
           distribution: 'temurin'
           cache: 'sbt'
       - name: Check formatting
-        uses: sbt scalafmtCheckAll
+        run: sbt scalafmtCheckAll
 
   tests:
     runs-on: ubuntu-latest
