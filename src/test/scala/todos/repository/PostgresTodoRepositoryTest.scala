@@ -5,6 +5,7 @@ import zio.*
 import zio.test.*
 import doobie.*
 import doobie.implicits.*
+import todos.config.DatabaseConfig
 import zio.interop.catz.*
 import zio.test.TestAspect.*
 import todos.models.*
@@ -16,7 +17,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
   val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] =
     ZLayer.scoped {
       for {
-        xa <- ZIO.succeed(createTestTransactor)
+        xa <- DatabaseConfig.layer
         _  <- ZIO.addFinalizer(cleanDatabase(xa).orDie)
       } yield xa
     }
