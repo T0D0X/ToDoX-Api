@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:15
+    container_name: todo-postgres-test
+    environment:
+      POSTGRES_DB: todo_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "8080:5432"
+    volumes:
+      - /home/slava/Документы/Scala/Project1/postgres/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d todo_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    tmpfs:
+      - /var/lib/postgresql/data

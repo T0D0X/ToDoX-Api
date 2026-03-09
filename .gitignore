@@ -44,6 +44,5 @@ build/
 .bsp/
 
 # Docker (генерируемые файлы)
-docker-compose.yml
 .docker/
 .bsp
