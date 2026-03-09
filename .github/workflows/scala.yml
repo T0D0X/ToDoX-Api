@@ -2,11 +2,9 @@ name: Scala CI
 
 on:
   push:
-    branches:
-      - '**'  # Все ветки
-    pull_request:
-      branches:
-        - '**'  # Все PR
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
 
 jobs:
   build-and-test:
