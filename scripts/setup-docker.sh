@@ -11,6 +11,12 @@ echo "🚀 Starting Docker setup for: $ENVIRONMENT"
 # Очистка
 bash "$SCRIPT_DIR/cleanup.sh"
 
-docker-compose up -d
+if command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD="docker-compose"
+else
+  COMPOSE_CMD="docker compose"
+fi
+
+$COMPOSE_CMD up -d
 
 echo "✅ Docker setup completed successfully!"
