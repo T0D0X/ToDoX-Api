@@ -2,9 +2,8 @@ name: Scala CI
 
 on:
   push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
+    branches:
+      - '**'  # Все ветки
 
 jobs:
   build-and-test:
