@@ -6,24 +6,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 ENVIRONMENT=${1:-test}
 
-source "$SCRIPT_DIR/config-loader.sh"
-source "$SCRIPT_DIR/compose-generator.sh"
-
 echo "🚀 Starting Docker setup for: $ENVIRONMENT"
 
 # Очистка
 bash "$SCRIPT_DIR/cleanup.sh"
 
-#Загрузка конфигурации
-load_config
+if command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD="docker-compose"
+else
+  COMPOSE_CMD="docker compose"
+fi
 
-# Проверка конфигурации
-validate_config "$ENVIRONMENT"
+$COMPOSE_CMD up -d
 
-# Генерация docker-compose
-generate_compose "$ENVIRONMENT"
+echo
 
-# Запуск сервисов
-start_services "$ENVIRONMENT"
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    set -a
+    source "$PROJECT_ROOT/.env"
+    set +a
+else
+    echo "⚠️ Файлы для окружения не найдены"
+fi
+
+bash "$SCRIPT_DIR/run-migration.sh"
 
 echo "✅ Docker setup completed successfully!"

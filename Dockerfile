@@ -26,7 +26,7 @@ RUN sbt update
 COPY . /app
 
 # Копируем миграции в отдельную папку
-COPY postgres/migrations /app/migrations/
+COPY postgres/migrations postgres/migrations/
 
 # Сборка
 RUN sbt clean compile stage
@@ -44,7 +44,7 @@ RUN apt-get update && \
 COPY --from=builder /app/target/universal/stage /app
 
 # Копирование миграций из builder этапа
-COPY --from=builder /app/migrations /app/migrations
+COPY --from=builder postgres/migrations postgres/migrations
 
 # Копирование скриптов
 COPY scripts/run-migration.sh /app/
