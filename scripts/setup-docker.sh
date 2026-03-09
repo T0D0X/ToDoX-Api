@@ -18,5 +18,8 @@ else
 fi
 
 $COMPOSE_CMD up -d
+sleep 10
+
+bash "$SCRIPT_DIR/run-migration.sh"
 
 echo "✅ Docker setup completed successfully!"
