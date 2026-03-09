@@ -1,8 +1,22 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+MIGRATIONS_DIR="$PROJECT_ROOT/postgres/migrations"
+CONTAINER_NAME="todo-postgres-test"  # имя контейнера из docker-compose.yml
+
+# Определяем способ подключения
+if command -v psql >/dev/null 2>&1; then
+    USE_DOCKER=false
+    echo "🔧 Режим: локальный psql"
+else
+    USE_DOCKER=true
+    echo "🔧 Режим: docker exec (psql внутри контейнера)"
+fi
+
 wait_for_db() {
-    local max_attempts=30
+    local max_attempts=10
     local attempt=1
 
     echo "Ожидание доступности базы данных..."
@@ -10,11 +24,17 @@ wait_for_db() {
     for attempt in $(seq 1 $max_attempts); do
         echo "Попытка $attempt из $max_attempts..."
 
-        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c '\q' 2>/dev/null; then
-            echo "✓ База данных доступна"
-            return 0
+        if [ "$USE_DOCKER" = true ]; then
+            if docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c '\q' 2>/dev/null; then
+                echo "✓ База данных доступна"
+                return 0
+            fi
+        else
+            if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c '\q' 2>/dev/null; then
+                echo "✓ База данных доступна"
+                return 0
+            fi
         fi
-
         sleep 2
     done
 
@@ -25,38 +45,46 @@ wait_for_db() {
 run_migrations() {
     echo "Проверка наличия миграций..."
 
-    # Проверяем обязательные переменные
     if [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ]; then
         echo "⚠ Пропускаем миграции: не все переменные БД установлены"
         return 0
     fi
 
     # Проверяем наличие папки с миграциями
-    if [ ! -d "/app/migrations" ]; then
-        echo "⚠ Папка /app/migrations не найдена. Пропускаем."
+    if [ ! -d "$MIGRATIONS_DIR" ]; then
+        echo "⚠ Папка $MIGRATIONS_DIR не найдена. Пропускаем."
         return 0
     fi
 
     # Ищем SQL файлы
-    local migration_files=$(find /app/migrations -name "*.sql" | sort)
+    local migration_files=$(find "$MIGRATIONS_DIR" -name "*.sql" | sort)
     if [ -z "$migration_files" ]; then
         echo "⚠ Файлы миграций не найдены. Пропускаем."
         return 0
     fi
 
-    echo "Найдено $(echo "$migration_files" | wc -l) файлов миграции"
+    echo "Найдено $(echo "$migration_files" | wc -l)"
 
-    # Просто выполняем все миграции по порядку
     for migration_file in $migration_files; do
         local filename=$(basename "$migration_file")
         echo "Выполняем: $filename"
 
-        # Выполняем SQL файл
-        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file"; then
-            echo "✓ Успешно: $filename"
+        if [ "$USE_DOCKER" = true ]; then
+            # Внутри контейнера файлы доступны по пути /docker-entrypoint-initdb.d/
+            local container_path="/docker-entrypoint-initdb.d/$filename"
+            if docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -f "$container_path"; then
+                echo "✓ Успешно: $filename"
+            else
+                echo "✗ Ошибка в миграции: $filename"
+                return 1
+            fi
         else
-            echo "✗ Ошибка в миграции: $filename"
-            return 1
+            if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file"; then
+                echo "✓ Успешно: $filename"
+            else
+                echo "✗ Ошибка в миграции: $filename"
+                return 1
+            fi
         fi
     done
 

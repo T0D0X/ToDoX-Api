@@ -18,7 +18,16 @@ else
 fi
 
 $COMPOSE_CMD up -d
-sleep 10
+
+echo
+
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    set -a
+    source "$PROJECT_ROOT/.env"
+    set +a
+else
+    echo "⚠️ Файлы для окружения не найдены"
+fi
 
 bash "$SCRIPT_DIR/run-migration.sh"
 

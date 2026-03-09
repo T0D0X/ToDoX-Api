@@ -10,12 +10,3 @@ services:
       POSTGRES_PASSWORD: test_password
     ports:
       - "8080:5432"
-    volumes:
-      - /home/slava/Документы/Scala/Project1/postgres/migrations:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test_user -d todo_test"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    tmpfs:
-      - /var/lib/postgresql/data
