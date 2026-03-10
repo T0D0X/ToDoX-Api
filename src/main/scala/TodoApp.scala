@@ -4,7 +4,7 @@ import todos.repository.PostgresTodoRepository
 import todos.service.TodoServiceImpl
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import todos.config.DatabaseConfig
+import todos.config.DataBaseConfig
 import zio.*
 import zio.http.Server
 
@@ -41,7 +41,7 @@ object TodoApp extends ZIOAppDefault {
   }
 
   val appLayer =
-    DatabaseConfig.transactorLayer >>>
+    DataBaseConfig.transactorLayer >>>
       ZLayer.fromFunction(PostgresTodoRepository(_)) >>>
       ZLayer.fromFunction(TodoServiceImpl.make) >>>
       ZLayer.fromFunction(new TodoController(_))

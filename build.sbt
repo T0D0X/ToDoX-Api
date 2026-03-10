@@ -6,7 +6,7 @@ val doobieVersion         = "1.0.0-RC11"
 val testContainersVersion = "0.43.6"
 val tapirVersion          = "1.13.2"
 
-libraryDependencies ++= Seq(
+val library = Seq(
   "org.postgresql"               % "postgresql"                      % "42.7.8",
   "com.typesafe"                 % "config"                          % "1.4.6",
   "dev.zio"                     %% "zio"                             % zioVersion,
@@ -33,13 +33,17 @@ libraryDependencies ++= Seq(
   "org.slf4j"                    % "slf4j-simple"                    % "2.0.17"              % Test
 )
 
+val scalaRules = Seq(
+  "-Wunused:imports",          // выдает предупрждения о неиспользованых  importов
+  "-Wconf:msg=unused import:e" // превращает warnings в errors
+)
+
 lazy val root = (project in file("."))
   .settings(
     name := "ToDoX-Api",
-    scalacOptions ++= Seq(
-      "-Wunused:imports",          // выдает предупрждения о неиспользованых  importов
-      "-Wconf:msg=unused import:e" // превращает warnings в errors
-    )
+    scalacOptions ++= scalaRules,
+    libraryDependencies ++= library,
+    Test / parallelExecution := true
   )
 
 enablePlugins(JavaAppPackaging, DockerPlugin)

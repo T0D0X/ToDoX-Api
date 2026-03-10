@@ -6,7 +6,7 @@ import zio.{Task, ZIO, ZLayer}
 
 import java.util.Properties
 
-case class DatabaseConfig(
+case class DataBaseConfig(
     user: String,
     password: String,
     host: String,
@@ -14,13 +14,13 @@ case class DatabaseConfig(
     port: Int
 )
 
-object DatabaseConfig {
-  val layer: ZIO[Any, Throwable, Transactor[Task]] = {
+object DataBaseConfig {
+  val layer: ZIO[Any, Throwable, Transactor[Task]] =
     for {
       config <- ZIO.attempt(ConfigFactory.load().getConfig("db"))
 
       dbConfig <- ZIO.attempt {
-        DatabaseConfig(
+        DataBaseConfig(
           host = config.getString("host"),
           port = config.getInt("port"),
           name = config.getString("name"),
@@ -30,8 +30,6 @@ object DatabaseConfig {
       }
 
       jdbcUrl = s"jdbc:postgresql://${dbConfig.host}:${dbConfig.port}/${dbConfig.name}"
-
-      _ <- ZIO.logInfo(s"Connecting to database:  $jdbcUrl")
 
       transactor <- ZIO.attempt {
         val props = new Properties()
@@ -45,11 +43,6 @@ object DatabaseConfig {
         )
       }
     } yield transactor
-  }.tapError { error =>
-    ZIO.logError(s"Failed to create database transactor: ${error.getMessage}")
-  }.tap { _ =>
-    ZIO.logInfo("Database transactor created successfully")
-  }
 
-  val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] = ZLayer.fromZIO(DatabaseConfig.layer)
+  val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] = ZLayer.fromZIO(DataBaseConfig.layer)
 }
