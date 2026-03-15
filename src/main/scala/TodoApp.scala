@@ -41,7 +41,7 @@ object TodoApp extends ZIOAppDefault {
   }
 
   val appLayer =
-    DataBaseConfig.transactorLayer >>>
+    DataBaseConfig.todoLayer >>>
       ZLayer.fromFunction(PostgresTodoRepository(_)) >>>
       ZLayer.fromFunction(TodoServiceImpl.make) >>>
       ZLayer.fromFunction(new TodoController(_))

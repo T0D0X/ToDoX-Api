@@ -1,6 +1,6 @@
 package todos.models
 
-import zio.json.{DeriveJsonCodec, JsonCodec}
+import zio.json.{JsonDecoder, JsonEncoder}
 
 import java.time.Instant
 import java.util.UUID
@@ -14,8 +14,5 @@ case class TodoItem(
     createAt: Instant,
     completeAt: Option[Instant],
     tags: List[String]
-)
-
-object TodoItem {
-  implicit val codec: JsonCodec[TodoItem] = DeriveJsonCodec.gen[TodoItem]
-}
+) derives JsonDecoder,
+      JsonEncoder

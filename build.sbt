@@ -5,10 +5,13 @@ val zioVersion            = "2.1.22"
 val doobieVersion         = "1.0.0-RC11"
 val testContainersVersion = "0.43.6"
 val tapirVersion          = "1.13.2"
+val pureConfigVersion     = "0.17.10"
 
 val library = Seq(
   "org.postgresql"               % "postgresql"                      % "42.7.8",
   "com.typesafe"                 % "config"                          % "1.4.6",
+  "com.github.pureconfig"       %% "pureconfig-core"                 % pureConfigVersion,
+  "com.github.pureconfig"       %% "pureconfig-generic-scala3"       % pureConfigVersion,
   "dev.zio"                     %% "zio"                             % zioVersion,
   "dev.zio"                     %% "zio-streams"                     % zioVersion,
   "dev.zio"                     %% "zio-http"                        % "3.7.0",

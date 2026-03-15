@@ -27,8 +27,8 @@ class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
   override def getAllByUserId(userId: UUID): Task[List[TodoItem]] =
     sql"""
 					SELECT user_id, id, description, priority, is_complete, created_at, completed_at, tags
-        FROM todo_items WHERE user_id = $userId
-        """
+					FROM todo_items WHERE user_id = $userId
+	"""
       .query[TodoItem]
       .to[List]
       .transact(xa)
@@ -37,7 +37,7 @@ class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
     sql"""
 						SELECT user_id, id, description, priority, is_complete, created_at, completed_at, tags
 						FROM todo_items WHERE id = $id
-					"""
+	"""
       .query[TodoItem]
       .option
       .transact(xa)
@@ -57,13 +57,13 @@ class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
 					${item.userId},
 					${item.id},
 					${item.description},
-          ${item.priority},
-          ${item.isComplete},
-          ${item.createAt},
-          ${item.completeAt},
-          ${item.tags}
+					${item.priority},
+                    ${item.isComplete},
+                    ${item.createAt},
+                    ${item.completeAt},
+                    ${item.tags}
 					)
-					""".update.run
+	""".update.run
       .transact(xa)
       .unit
 

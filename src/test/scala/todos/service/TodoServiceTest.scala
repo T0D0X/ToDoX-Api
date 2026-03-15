@@ -4,12 +4,10 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import todos.errors.AppErrors.*
-import todos.generator.ToDoGenerators.*
+import todos.utils.ToDoGenerators.*
 import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
 import todos.repository.TodoRepository
-import zio.{Exit, ZIO}
-import zio.Unsafe
-import zio.Runtime
+import zio.{Exit, Runtime, Unsafe, ZIO}
 
 import java.util.UUID
 
