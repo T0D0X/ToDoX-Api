@@ -51,6 +51,11 @@ object AppErrors {
     override def code: String    = "NOT_FOUND_002"
   }
 
+  case class RequestNotFoundError(message: String) extends NotFoundErrorBase {
+    override def getMessage: String = "Request Error"
+    override def code: String       = "NOT_FOUND_003"
+  }
+
   // ============ DATABASE ERRORS ============
   sealed trait DatabaseErrorBase extends AppError
 

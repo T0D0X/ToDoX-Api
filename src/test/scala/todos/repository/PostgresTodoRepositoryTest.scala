@@ -1,35 +1,32 @@
 package todos.repository
 
-import todos.generator.ToDoGenerators.*
+import todos.utils.ToDoGenerators.*
 import zio.*
 import zio.test.*
 import doobie.*
 import doobie.implicits.*
-import todos.config.DatabaseConfig
+import todos.config.DataBaseConfig
 import zio.interop.catz.*
 import zio.test.TestAspect.*
 import todos.models.*
 
-import java.util.{Properties, UUID}
+import java.util.UUID
 
 object PostgresTodoRepositoryTest extends ZIOSpecDefault {
 
-  val transactorLayer: ZLayer[Any, Throwable, Transactor[Task]] =
+  val transactorLayer: ZLayer[Any, Throwable, TodoRepository] =
     ZLayer.scoped {
       for {
-        xa <- DatabaseConfig.layer
+        xa <- DataBaseConfig.todoL
         _  <- ZIO.addFinalizer(cleanDatabase(xa).orDie)
-      } yield xa
+      } yield new PostgresTodoRepository(xa)
     }
-  val repositoryLayer: ZLayer[Any, Throwable, TodoRepository] =
-    transactorLayer >>> ZLayer.fromFunction(new PostgresTodoRepository(_))
-
   override def spec = suite("PostgresTodoRepositoryTest")(
     getAllByUserIdSpec,
     getByIdSpec,
     deleteTodoItemSpec,
     updateTodoItemSpec
-  ) @@ sequential provideLayer repositoryLayer
+  ) @@ sequential provideLayer transactorLayer
 
   def getAllByUserIdSpec = suite("getAllByUserId")(
     test("getAllByUserId return Empty List") {
@@ -101,17 +98,4 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
 
   private def cleanDatabase(xa: Transactor[Task]): Task[Unit] =
     sql"TRUNCATE TABLE todo_items".update.run.transact(xa).unit
-
-  private def createTestTransactor: Transactor[Task] = {
-    val props = new Properties()
-    props.setProperty("user", "test_user")
-    props.setProperty("password", "test_password")
-
-    Transactor.fromDriverManager[Task](
-      driver = "org.postgresql.Driver",
-      url = "jdbc:postgresql://localhost:8080/todo_test",
-      info = props,
-      logHandler = None
-    )
-  }
 }

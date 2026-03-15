@@ -3,7 +3,7 @@ package todos.json
 import zio.json.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
+import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest, UserData}
 
 import java.time.Instant
 import java.util.UUID
@@ -103,8 +103,8 @@ class JsonReaderSpec extends AnyFlatSpec with Matchers {
         |     "priority": "Medium",
         |     "isComplete": true,
         |     "createAt": "2021-10-01T12:00:00Z",
-        |			"completeAt": "2023-10-01T12:00:00Z",
-        |			"tags": ["work", "urgent"]
+        |	  "completeAt": "2023-10-01T12:00:00Z",
+        |	  "tags": ["work", "urgent"]
         |}
         |""".stripMargin
 
@@ -131,7 +131,7 @@ class JsonReaderSpec extends AnyFlatSpec with Matchers {
         |     "priority": "Medium",
         |     "isComplete": true,
         |     "createAt": "2021-10-01T12:00:00Z",
-        |			"tags": []
+        |	  "tags": []
         |}
         |""".stripMargin
 
@@ -145,6 +145,27 @@ class JsonReaderSpec extends AnyFlatSpec with Matchers {
         createAt = Instant.parse("2021-10-01T12:00:00Z"),
         completeAt = None,
         tags = List.empty
+      )
+    )
+  }
+
+  "UserData" should "ReadTest" in {
+    val json =
+      """
+        |{
+        |   "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        |   "login": "SlavaBuchnev",
+        |   "email": "slavabuchnev@pochta.ru",
+        |   "phone": "+799999999"
+        |}
+        |""".stripMargin
+
+    json.fromJson[UserData] shouldBe Right(
+      UserData(
+        userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
+        login = "SlavaBuchnev",
+        email = "slavabuchnev@pochta.ru",
+        phone = "+799999999"
       )
     )
   }

@@ -3,7 +3,7 @@ package todos.json
 import zio.json.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
+import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest, UserData}
 
 import java.time.Instant
 import java.util.UUID
@@ -85,5 +85,16 @@ class JsonWriterSpec extends AnyFlatSpec with Matchers {
     )
     val json = request.toJson
     json.fromJson[TodoItem] shouldBe Right(request)
+  }
+
+  "UserData" should "WriterTest" in {
+    val request = UserData(
+      userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
+      login = "SlavaBuchnev",
+      email = "slavabuchnev@pochta.ru",
+      phone = "+799999999"
+    )
+    val json = request.toJson
+    json.fromJson[UserData] shouldBe Right(request)
   }
 }
