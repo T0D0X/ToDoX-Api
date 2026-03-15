@@ -31,9 +31,9 @@ object DataBaseConfig {
 
   def loadMkTransactor(name: String): ZIO[Any, Throwable, Transactor[Task]] =
     ZIO.attempt(ConfigSource.default.at(s"db.$name").loadOrThrow[DataBaseConfig]).map(mkTransactor)
-  
-  val usersL: ZIO[Any, Throwable, Transactor[Task]] = loadMkTransactor("users")
-  val todoL: ZIO[Any, Throwable, Transactor[Task]] = loadMkTransactor("todo_items")
+
+  val usersL: ZIO[Any, Throwable, Transactor[Task]]        = loadMkTransactor("users")
+  val todoL: ZIO[Any, Throwable, Transactor[Task]]         = loadMkTransactor("todo_items")
   val usersLayer: ZLayer[Any, Throwable, Transactor[Task]] = ZLayer.fromZIO(usersL)
   val todoLayer: ZLayer[Any, Throwable, Transactor[Task]]  = ZLayer.fromZIO(todoL)
 }
