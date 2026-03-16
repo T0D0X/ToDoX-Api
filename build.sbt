@@ -49,18 +49,4 @@ lazy val root = (project in file("."))
     Test / parallelExecution := true
   )
 
-enablePlugins(JavaAppPackaging, DockerPlugin)
-
-// Базовые настройки Docker
-Docker / packageName := "todox-api"
-Docker / version     := "1.0"
-dockerBaseImage      := "eclipse-temurin:21-jdk"
-dockerExposedPorts   := Seq(8080)
-
-Compile / mainClass := Some("TodoApp")
-
-bashScriptExtraDefines := Seq()
-
-testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
-
 addCommandAlias("compileAll", ";compile;Test/compile")
