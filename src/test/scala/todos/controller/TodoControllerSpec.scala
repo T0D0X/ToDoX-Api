@@ -13,8 +13,8 @@ import java.util.UUID
 
 object TodoControllerSpec extends ZIOSpecDefault {
 
-  private val testId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
-  private val testTodo = TodoItem(
+  protected val testId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  protected val testTodo = TodoItem(
     userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
     id = testId,
     description = Some("Test description"),
@@ -27,12 +27,8 @@ object TodoControllerSpec extends ZIOSpecDefault {
 
   def spec = suite("TodoControllerSpec")(
     suite("GET /api/v1/todos/get/{id}")(
-      test("возвращает 200 и todo при успешном поиске") {
-        val mockService = createMockService(
-          getResult = ZIO.some(testTodo)
-        )
-
-        val app = createApp(mockService)
+      test("return  200 and todo found") {
+        val app = createApp(mockService(getResult = ZIO.some(testTodo)))
         val request = Request.get(
           decodeUrl(s"api/v1/todos/get/${testId.toString}")
         )
@@ -45,12 +41,8 @@ object TodoControllerSpec extends ZIOSpecDefault {
           body.contains(testId.toString)
         )
       },
-      test("возвращает 404 при отсутствии todo") {
-        val mockService = createMockService(
-          getResult = ZIO.none
-        )
-
-        val app = createApp(mockService)
+      test("return 404 todo not found") {
+        val app = createApp(mockService(getResult = ZIO.none))
         val request = Request.get(
           decodeUrl(s"api/v1/todos/get/${testId.toString}")
         )
@@ -61,12 +53,21 @@ object TodoControllerSpec extends ZIOSpecDefault {
           response.status == Status.NotFound
         )
       },
-      test("возвращает 500 при ошибке базы данных") {
-        val mockService = createMockService(
-          getResult = ZIO.fail(new RuntimeException("Database connection failed"))
+      test("return 400 no validate userId") {
+        val app = createApp(mockService())
+        val request = Request.get(
+          decodeUrl(s"api/v1/todos/get/unknown")
         )
 
-        val app = createApp(mockService)
+        for {
+          response <- app(request)
+          body     <- response.body.asString.option
+        } yield assertTrue(
+          response.status == Status.BadRequest
+        )
+      },
+      test("return 500 database failed") {
+        val app = createApp(mockService(getResult = ZIO.fail(new RuntimeException("Database connection failed"))))
         val request = Request.get(
           decodeUrl(s"api/v1/todos/get/${testId.toString}")
         )
@@ -79,43 +80,25 @@ object TodoControllerSpec extends ZIOSpecDefault {
           body.isDefined,
           body.exists(_.contains("DatabaseError"))
         )
-      },
-      test("валидирует UUID параметр") {
-        val mockService = createMockService()
-
-        val app = createApp(mockService)
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/not-a-uuid")
-        )
-
-        for {
-          response <- app(request)
-        } yield assertTrue(
-          response.status == Status.BadRequest
-        )
       }
     ),
     suite("POST /api/v1/todos/create")(
-      test("возвращает 200 при успешном создании") {
-        val mockService = createMockService(
-          createResult = ZIO.unit
-        )
-
-        val app = createApp(mockService)
-        val request = Request
-          .post(
-            decodeUrl(s"api/v1/todos/create"),
-            Body.fromString("""{
-                              |  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                              |  "description": "string",
-                              |  "priority": "low",
-                              |  "completeAt": "2025-12-14T07:22:02.250Z",
-                              |  "tags": [
-                              |    "string"
-                              |  ]
-                              |}""".stripMargin)
+      test("return 200 todo create") {
+        val app = createApp(mockService(createResult = ZIO.unit))
+        val request = Request.post(
+          decodeUrl(s"api/v1/todos/create"),
+          Body.fromString(
+            """{
+              |  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              |  "description": "string",
+              |  "priority": "low",
+              |  "completeAt": "2025-12-14T07:22:02.250Z",
+              |  "tags": [
+              |    "string"
+              |  ]
+              |}""".stripMargin
           )
-          .addHeader(Header.ContentType(MediaType.application.json))
+        )
 
         for {
           response <- app(request)
@@ -123,30 +106,11 @@ object TodoControllerSpec extends ZIOSpecDefault {
           response.status == Status.Ok
         )
       },
-      test("возвращает 400 при некорректном JSON") {
-        val mockService = createMockService()
-
-        val app = createApp(mockService)
-        val request = Request
-          .post(
-            decodeUrl(s"api/v1/todos/create"),
-            Body.fromString("""{invalid json}""")
-          )
-          .addHeader(Header.ContentType(MediaType.application.json))
-
-        for {
-          response <- app(request)
-        } yield assertTrue(
-          response.status == Status.BadRequest
-        )
-      },
-      test("возвращает 400 при отсутствии Content-Type") {
-        val mockService = createMockService()
-
-        val app = createApp(mockService)
+      test("return 400 JSON no validate") {
+        val app = createApp(mockService())
         val request = Request.post(
           decodeUrl(s"api/v1/todos/create"),
-          Body.fromString("""{"title":"Test"}""")
+          Body.fromString("""{invalid json}""")
         )
 
         for {
@@ -157,20 +121,14 @@ object TodoControllerSpec extends ZIOSpecDefault {
       }
     ),
     suite("PUT /api/v1/todos/update/{id}")(
-      test("возвращает 200 при успешном обновлении") {
-        val mockService = createMockService(
-          updateResult = ZIO.unit
-        )
-
-        val app = createApp(mockService)
-        val request = Request
-          .put(
-            decodeUrl(s"api/v1/todos/update/${testId.toString}"),
-            Body.fromString(
-              """{"title":"Updated","description":"Updated Desc","isDone":true}"""
-            )
+      test("return 200 validate success") {
+        val app = createApp(mockService(updateResult = ZIO.unit))
+        val request = Request.put(
+          decodeUrl(s"api/v1/todos/update/${testId.toString}"),
+          Body.fromString(
+            """{"title":"Updated","description":"Updated Desc","isDone":true}"""
           )
-          .addHeader(Header.ContentType(MediaType.application.json))
+        )
 
         for {
           response <- app(request)
@@ -178,33 +136,27 @@ object TodoControllerSpec extends ZIOSpecDefault {
           response.status == Status.Ok
         )
       },
-      test("возвращает 404 при обновлении несуществующего todo") {
-        val mockService = createMockService(
-          updateResult = ZIO.fail(TodoNotFoundError(testId.toString))
+      test("return 404 todo not found") {
+        val app = createApp(mockService(updateResult = ZIO.fail(TodoNotFoundError(testId.toString))))
+        val request = Request.put(
+          decodeUrl(s"api/v1/todos/update/${testId.toString}"),
+          Body.fromString("""{"title":"Updated"}""")
         )
-
-        val app = createApp(mockService)
-        val request = Request
-          .put(
-            decodeUrl(s"api/v1/todos/update/${testId.toString}"),
-            Body.fromString("""{"title":"Updated"}""")
-          )
-          .addHeader(Header.ContentType(MediaType.application.json))
 
         for {
           response <- app(request)
+          body     <- response.body.asString.option
         } yield assertTrue(
-          response.status == Status.NotFound
+          response.status == Status.NotFound,
+          body.exists(_.contains("NOT_FOUND_001")),
+          body.exists(_.contains(s"Todo with id $testId not found"))
         )
       }
     ),
     suite("DELETE /api/v1/todos/delete/{id}")(
-      test("возвращает 200 при успешном удалении") {
-        val mockService = createMockService(
-          deleteResult = ZIO.unit
-        )
+      test("return 200 delete success") {
 
-        val app = createApp(mockService)
+        val app = createApp(mockService(deleteResult = ZIO.unit))
         val request = Request.delete(
           decodeUrl(s"api/v1/todos/delete/${testId.toString}")
         )
@@ -214,14 +166,26 @@ object TodoControllerSpec extends ZIOSpecDefault {
         } yield assertTrue(
           response.status == Status.Ok
         )
+      },
+      test("return 404 todo not found") {
+        val app = createApp(mockService(deleteResult = ZIO.fail(TodoNotFoundError(testId.toString))))
+        val request = Request.delete(
+          decodeUrl(s"api/v1/todos/delete/${testId.toString}")
+        )
+
+        for {
+          response <- app(request)
+          body     <- response.body.asString.option
+        } yield assertTrue(
+          response.status == Status.NotFound,
+          body.exists(_.contains("NOT_FOUND_001")),
+          body.exists(_.contains(s"Todo with id $testId not found"))
+        )
       }
     ),
     suite("GET /api/v1/todos/user/{id}")(
-      test("возвращает 200 при успешном выполнении") {
-        val mockService = createMockService(
-          getByUserIdResult = ZIO.succeed(List(testTodo))
-        )
-        val app = createApp(mockService)
+      test("return 200 success operation") {
+        val app = createApp(mockService(getByUserIdResult = ZIO.succeed(List(testTodo))))
         val request = Request.get(
           decodeUrl(s"api/v1/todos/user/${testTodo.userId}")
         )
@@ -236,8 +200,7 @@ object TodoControllerSpec extends ZIOSpecDefault {
     )
   )
 
-  // Мок-сервис для тестирования
-  private def createMockService(
+  private def mockService(
       getResult: Task[Option[TodoItem]] = ZIO.none,
       createResult: Task[Unit] = ZIO.unit,
       updateResult: Task[Unit] = ZIO.unit,
@@ -257,16 +220,13 @@ object TodoControllerSpec extends ZIOSpecDefault {
       getByUserIdResult
   }
 
-  // метод для декодирования из строки в URL
   private def decodeUrl(path: String): URL =
     URL.decode(path).getOrElse {
       throw new IllegalArgumentException(s"Invalid URL path: $path")
     }
 
-  // Создаем HTTP приложение из контроллера
   private def createApp(service: TodoService): Routes[Any, Response] = {
     val controller = new TodoController(service)
-    val endpoints  = controller.allEndpoints
-    ZioHttpInterpreter().toHttp(endpoints)
+    ZioHttpInterpreter().toHttp(controller.allEndpoints)
   }
 }
