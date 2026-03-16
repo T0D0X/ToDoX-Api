@@ -2,14 +2,14 @@ package todos.service
 
 import todos.errors.AppErrors.*
 import todos.utils.ToDoGenerators.*
-import todos.utils.CommonUtilsTest
+import todos.utils.CommonUtilsTests
 import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
 import todos.repository.TodoRepository
 import zio.ZIO
 
 import java.util.UUID
 
-class TodoServiceTest extends CommonUtilsTest {
+class TodoServiceTest extends CommonUtilsTests {
 
   "get" should "return TodoItem" in new Testing {
     todoRepository.getById.expects(todoItem.id).returns(ZIO.some(todoItem))

@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import zio.{Exit, Runtime, Unsafe, ZIO}
 
-trait CommonUtilsTest extends AnyFlatSpec with Matchers with MockFactory {
+trait CommonUtilsTests extends AnyFlatSpec with Matchers with MockFactory {
   protected def unsafeRun[A](zio: ZIO[Any, Throwable, A]): A =
     Unsafe.unsafe { implicit unsafe =>
       Runtime.default.unsafe.run(zio).getOrThrow()

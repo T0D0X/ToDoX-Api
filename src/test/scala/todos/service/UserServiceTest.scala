@@ -3,11 +3,11 @@ package todos.service
 import todos.errors.AppErrors.RequestNotFoundError
 import todos.models.{UpdateUserDataRequest, UserData, UserIdOrLogin}
 import todos.repository.UserRepository
-import todos.utils.CommonUtilsTest
+import todos.utils.CommonUtilsTests
 import todos.utils.ToDoGenerators.*
 import zio.ZIO
 
-class UserServiceTest extends CommonUtilsTest {
+class UserServiceTest extends CommonUtilsTests {
 
   "get" should "return UserData by userId" in new Testing {
     userRepository.getByUserId.expects(user.userId).returns(ZIO.some(user))
