@@ -1,64 +1,28 @@
 package todos.json
 
-import zio.json.*
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest, UserData}
+import todos.models.{Priority, TodoItem, UserData}
+import todos.utils.CommonJsonTests
 
 import java.time.Instant
 import java.util.UUID
 
-class JsonWriterSpec extends AnyFlatSpec with Matchers {
-  "UpdateTodoRequest" should "fullWriterTest" in {
-    val request = UpdateTodoRequest(
-      description = Some("Study ZIO"),
-      priority = Some(Priority.Medium),
-      isComplete = Some(true),
-      completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = Some(List("work", "urgent"))
-    )
-    val json = request.toJson
-    json.fromJson[UpdateTodoRequest] shouldBe Right(request)
-  }
+class JsonWriterSpec extends CommonJsonTests {
 
-  it should "MinimalWriterTest" in {
-    val request = UpdateTodoRequest(
-      description = None,
-      priority = None,
-      isComplete = None,
-      completeAt = None,
-      tags = None
-    )
-    val json = request.toJson
-    json.fromJson[UpdateTodoRequest] shouldBe Right(request)
-  }
-
-  "CreateTodoRequest" should "fullWriterTest" in {
-    val request = CreateTodoRequest(
-      userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-      description = Some("Study ZIO"),
-      priority = Priority.Medium,
-      completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = List("work", "urgent")
-    )
-    val json = request.toJson
-    json.fromJson[CreateTodoRequest] shouldBe Right(request)
-  }
-
-  it should "MinimalWriterTest" in {
-    val request = CreateTodoRequest(
-      userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-      description = None,
-      priority = Priority.Medium,
-      completeAt = None,
-      tags = List.empty
-    )
-    val json = request.toJson
-    json.fromJson[CreateTodoRequest] shouldBe Right(request)
-  }
-
-  "TodoItem" should "fullWriterTest" in {
-    val request = TodoItem(
+  testWrite(
+    desc = "fullWriterTest",
+    json = """
+             |{
+             |     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+             |     "id": "00000000-0000-0000-0000-000000000000",
+             |     "description": "Study ZIO",
+             |     "priority": "medium",
+             |     "isComplete": true,
+             |     "createAt": "2021-10-01T12:00:00Z",
+             |	   "completeAt": "2023-10-01T12:00:00Z",
+             |	   "tags": ["work", "urgent"]
+             |}
+             |""".stripMargin,
+    obj = TodoItem(
       userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
       id = UUID.fromString("00000000-0000-0000-0000-000000000000"),
       description = Some("Study ZIO"),
@@ -66,14 +30,23 @@ class JsonWriterSpec extends AnyFlatSpec with Matchers {
       isComplete = true,
       createAt = Instant.parse("2021-10-01T12:00:00Z"),
       completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = List("work", "urgent")
-    )
-    val json = request.toJson
-    json.fromJson[TodoItem] shouldBe Right(request)
-  }
+      tags = List("work", "urgent"),
+    ),
+  )
 
-  it should "MinimalWriterTest" in {
-    val request = TodoItem(
+  testWrite(
+    desc = "MinimalWriterTest",
+    json = """
+             |{
+             |     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+             |     "id": "00000000-0000-0000-0000-000000000000",
+             |     "priority": "medium",
+             |     "isComplete": true,
+             |     "createAt": "2021-10-01T12:00:00Z",
+             |	  "tags": []
+             |}
+             |""".stripMargin,
+    obj = TodoItem(
       userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
       id = UUID.fromString("00000000-0000-0000-0000-000000000000"),
       description = None,
@@ -81,20 +54,24 @@ class JsonWriterSpec extends AnyFlatSpec with Matchers {
       isComplete = true,
       createAt = Instant.parse("2021-10-01T12:00:00Z"),
       completeAt = None,
-      tags = List.empty
-    )
-    val json = request.toJson
-    json.fromJson[TodoItem] shouldBe Right(request)
-  }
+      tags = List.empty,
+    ),
+  )
 
-  "UserData" should "WriterTest" in {
-    val request = UserData(
+  testWrite(
+    json = """
+             |{
+             |   "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+             |   "login": "SlavaBuchnev",
+             |   "email": "slavabuchnev@pochta.ru",
+             |   "phone": "+799999999"
+             |}
+             |""".stripMargin,
+    obj = UserData(
       userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
       login = "SlavaBuchnev",
       email = "slavabuchnev@pochta.ru",
-      phone = "+799999999"
-    )
-    val json = request.toJson
-    json.fromJson[UserData] shouldBe Right(request)
-  }
+      phone = "+799999999",
+    ),
+  )
 }

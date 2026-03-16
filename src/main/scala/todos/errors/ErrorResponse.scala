@@ -9,7 +9,7 @@ case class ErrorResponse(
     error: String,
     code: String,
     message: String,
-    timestamp: Instant = Instant.now()
+    timestamp: Instant = Instant.now(),
 )
 
 object ErrorResponse {
@@ -24,21 +24,21 @@ object ErrorResponse {
         ErrorResponse(
           error = "ValidationError",
           code = v.code,
-          message = v.message
+          message = v.message,
         )
 
       case n: AppErrors.NotFoundErrorBase =>
         ErrorResponse(
           error = "NotFoundError",
           code = n.code,
-          message = n.message
+          message = n.message,
         )
 
       case d: AppErrors.DatabaseErrorBase =>
         ErrorResponse(
           error = "DatabaseError",
           code = d.code,
-          message = d.message
+          message = d.message,
         )
     }
 }

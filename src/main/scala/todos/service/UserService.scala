@@ -16,8 +16,8 @@ class UserServiceImpl(userRepository: UserRepository) extends UserService {
   override def get(request: UserIdOrLogin): Task[Option[UserData]] =
     (request.userId, request.login) match {
       case (Some(userId), _) => userRepository.getByUserId(userId)
-      case (_, Some(login))  => userRepository.getByLogin(login)
-      case _                 => ZIO.fail(RequestNotFoundError(""))
+      case (_, Some(login)) => userRepository.getByLogin(login)
+      case _ => ZIO.fail(RequestNotFoundError(""))
     }
 
   override def create(user: UserData): Task[Boolean] =
@@ -26,7 +26,7 @@ class UserServiceImpl(userRepository: UserRepository) extends UserService {
   override def delete(request: UserIdOrLogin): Task[Unit] =
     (request.userId, request.login) match {
       case (Some(userId), _) => userRepository.deleteByUserId(userId)
-      case (_, Some(login))  => userRepository.deleteByLogin(login)
-      case _                 => ZIO.fail(RequestNotFoundError(""))
+      case (_, Some(login)) => userRepository.deleteByLogin(login)
+      case _ => ZIO.fail(RequestNotFoundError(""))
     }
 }

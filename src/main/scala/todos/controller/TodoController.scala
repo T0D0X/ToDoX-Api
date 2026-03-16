@@ -24,8 +24,8 @@ class TodoController(todoService: TodoService) {
           error = "TodoNotFoundError",
           code = "NOT_FOUND",
           message = "Todo with id 123e4567-e89b-12d3-a456-426614174000 not found",
-          timestamp = Instant.parse("2021-10-01T12:00:00Z")
-        )
+          timestamp = Instant.parse("2021-10-01T12:00:00Z"),
+        ),
       )
 
   private val validationOutput =
@@ -36,8 +36,8 @@ class TodoController(todoService: TodoService) {
           error = "ValidationError",
           code = "VALIDATION",
           message = "Field 'title' cannot be empty",
-          timestamp = Instant.parse("2021-10-01T12:00:00Z")
-        )
+          timestamp = Instant.parse("2021-10-01T12:00:00Z"),
+        ),
       )
 
   private val databaseOutput =
@@ -48,8 +48,8 @@ class TodoController(todoService: TodoService) {
           error = "DatabaseError",
           code = "DB",
           message = "Database operation failed",
-          timestamp = Instant.parse("2021-10-01T12:00:00Z")
-        )
+          timestamp = Instant.parse("2021-10-01T12:00:00Z"),
+        ),
       )
 
   private val baseEndpoint = endpoint
@@ -65,8 +65,8 @@ class TodoController(todoService: TodoService) {
         },
         oneOfVariantValueMatcher(StatusCode.InternalServerError, databaseOutput) {
           case ErrorResponse(_, code, _, _) if code.startsWith("DB") => true
-        }
-      )
+        },
+      ),
     )
 
   private def toErrorResponse(throwable: Throwable): ErrorResponse = throwable match {
@@ -75,7 +75,7 @@ class TodoController(todoService: TodoService) {
       ErrorResponse(
         error = "DatabaseError",
         code = "DB",
-        message = ex.getMessage
+        message = ex.getMessage,
       )
   }
 
@@ -146,7 +146,7 @@ class TodoController(todoService: TodoService) {
     updateTodoEndpoint,
     deleteTodoEndpoint,
     createTodoEndpoint,
-    getByUserIdTodoEndpoint
+    getByUserIdTodoEndpoint,
   )
 }
 

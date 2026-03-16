@@ -7,9 +7,9 @@ import doobie._
 object MetaData {
   implicit val priorityMeta: Meta[Priority] =
     Meta[String].timap(Priority.fromString) {
-      case Priority.Low    => "low"
+      case Priority.Low => "low"
       case Priority.Medium => "medium"
-      case Priority.High   => "high"
+      case Priority.High => "high"
     }
 
   implicit val uuidMeta: Meta[UUID] =

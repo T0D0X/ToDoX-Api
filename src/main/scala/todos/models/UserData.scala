@@ -8,6 +8,6 @@ case class UserData(
     userId: UUID,
     login: String,
     email: String,
-    phone: String
+    phone: String,
 ) derives JsonDecoder,
       JsonEncoder

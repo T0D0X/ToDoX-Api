@@ -8,9 +8,9 @@ sealed trait Priority
 object Priority {
 
   def fromString(s: String): Priority = s.toLowerCase match {
-    case "high"   => High
+    case "high" => High
     case "medium" => Medium
-    case _        => Low
+    case _ => Low
   }
 
   case object Low extends Priority
@@ -22,16 +22,16 @@ object Priority {
   implicit val codec: JsonCodec[Priority] = JsonCodec.string.transformOrFail(
     str => Right(fromString(str)),
     {
-      case Low    => "low"
+      case Low => "low"
       case Medium => "medium"
-      case High   => "high"
-    }
+      case High => "high"
+    },
   )
 
   implicit val priorityMeta: Meta[Priority] =
     Meta[String].timap(Priority.fromString) {
-      case Priority.Low    => "low"
+      case Priority.Low => "low"
       case Priority.Medium => "medium"
-      case Priority.High   => "high"
+      case Priority.High => "high"
     }
 }
