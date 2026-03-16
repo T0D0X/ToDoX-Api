@@ -60,10 +60,10 @@ class UserServiceTest extends CommonUtilsTests {
     checkFailure(sevice.delete(userIdOrLoginEmpty))(RequestNotFoundError(""))
   }
   trait Testing {
-    val user                           = generateUnsafe[UserData]
-    val updateUserEWmpty               = UpdateUserDataRequest.empty
-    val userIdOrLoginEmpty             = UserIdOrLogin.empty
+    val user = generateUnsafe[UserData]
+    val updateUserEWmpty = UpdateUserDataRequest.empty
+    val userIdOrLoginEmpty = UserIdOrLogin.empty
     val userRepository: UserRepository = mock[UserRepository]
-    val sevice                         = new UserServiceImpl(userRepository)
+    val sevice = new UserServiceImpl(userRepository)
   }
 }

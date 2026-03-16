@@ -13,6 +13,6 @@ case class TodoItem(
     isComplete: Boolean,
     createAt: Instant,
     completeAt: Option[Instant],
-    tags: List[String]
+    tags: List[String],
 ) derives JsonDecoder,
       JsonEncoder

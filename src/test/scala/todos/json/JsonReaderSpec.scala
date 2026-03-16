@@ -24,8 +24,8 @@ class JsonReaderSpec extends CommonJsonTests {
       priority = Some(Priority.Medium),
       isComplete = Some(true),
       completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = Some(List("work", "urgent"))
-    )
+      tags = Some(List("work", "urgent")),
+    ),
   )
 
   testRead(
@@ -33,7 +33,7 @@ class JsonReaderSpec extends CommonJsonTests {
     json = """
              |{}
              |""".stripMargin,
-    obj = UpdateTodoRequest.empty
+    obj = UpdateTodoRequest.empty,
   )
 
   testRead(
@@ -52,8 +52,8 @@ class JsonReaderSpec extends CommonJsonTests {
       description = Some("Study ZIO"),
       priority = Priority.Medium,
       completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = List("work", "urgent")
-    )
+      tags = List("work", "urgent"),
+    ),
   )
 
   testRead(
@@ -70,8 +70,8 @@ class JsonReaderSpec extends CommonJsonTests {
       description = None,
       priority = Priority.Low,
       completeAt = None,
-      tags = List.empty
-    )
+      tags = List.empty,
+    ),
   )
 
   testRead(
@@ -96,8 +96,8 @@ class JsonReaderSpec extends CommonJsonTests {
       isComplete = true,
       createAt = Instant.parse("2021-10-01T12:00:00Z"),
       completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = List("work", "urgent")
-    )
+      tags = List("work", "urgent"),
+    ),
   )
 
   testRead(
@@ -120,8 +120,8 @@ class JsonReaderSpec extends CommonJsonTests {
       isComplete = true,
       createAt = Instant.parse("2021-10-01T12:00:00Z"),
       completeAt = None,
-      tags = List.empty
-    )
+      tags = List.empty,
+    ),
   )
 
   testRead(
@@ -137,7 +137,7 @@ class JsonReaderSpec extends CommonJsonTests {
       userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
       login = "SlavaBuchnev",
       email = "slavabuchnev@pochta.ru",
-      phone = "+799999999"
-    )
+      phone = "+799999999",
+    ),
   )
 }

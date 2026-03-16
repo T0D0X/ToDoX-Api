@@ -13,7 +13,7 @@ class DataBaseConfigSpec extends AnyFlatSpec with Matchers {
         port = config.getInt("port"),
         name = config.getString("name"),
         user = config.getString("user"),
-        password = config.getString("password")
+        password = config.getString("password"),
       )
       Right(())
     } catch {

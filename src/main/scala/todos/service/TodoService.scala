@@ -26,7 +26,7 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
 
     _ <- existingItem match {
       case Some(_) => ZIO.unit
-      case None    => ZIO.fail(TodoNotFoundError(id.toString))
+      case None => ZIO.fail(TodoNotFoundError(id.toString))
     }
 
     _ <- ZIO.when(
@@ -35,8 +35,8 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
         updateRequest.priority,
         updateRequest.isComplete,
         updateRequest.completeAt,
-        updateRequest.tags
-      ).forall(_.isEmpty)
+        updateRequest.tags,
+      ).forall(_.isEmpty),
     )(ZIO.fail(EmptyFieldError()))
 
     _ <- todoRepository.updateTodoItem(id, updateRequest)
@@ -48,7 +48,7 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
 
     _ <- existingItem match {
       case Some(_) => ZIO.unit
-      case None    => ZIO.fail(TodoNotFoundError(id.toString))
+      case None => ZIO.fail(TodoNotFoundError(id.toString))
     }
 
     _ <- todoRepository.deleteTodoItem(id)

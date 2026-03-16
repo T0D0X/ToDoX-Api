@@ -74,11 +74,11 @@ class TodoServiceTest extends CommonUtilsTests {
   }
 
   trait Testing {
-    val todoItem                       = generateUnsafe[TodoItem]
-    val todoUpdateEmpty                = UpdateTodoRequest.empty
-    val todoCreate                     = generateUnsafe[CreateTodoRequest].copy(userId = todoItem.userId)
-    val id                             = generateUnsafe[UUID]
+    val todoItem = generateUnsafe[TodoItem]
+    val todoUpdateEmpty = UpdateTodoRequest.empty
+    val todoCreate = generateUnsafe[CreateTodoRequest].copy(userId = todoItem.userId)
+    val id = generateUnsafe[UUID]
     val todoRepository: TodoRepository = mock[TodoRepository]
-    val service                        = new TodoServiceImpl(todoRepository)
+    val service = new TodoServiceImpl(todoRepository)
   }
 }

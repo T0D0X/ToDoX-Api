@@ -10,7 +10,7 @@ case class UpdateTodoRequest(
     priority: Option[Priority],
     isComplete: Option[Boolean],
     completeAt: Option[Instant],
-    tags: Option[List[String]]
+    tags: Option[List[String]],
 ) derives JsonDecoder,
       JsonEncoder
 
@@ -21,7 +21,7 @@ object UpdateTodoRequest {
       priority = Some(Priority.High),
       isComplete = Some(false),
       completeAt = None,
-      tags = Some(List("Name"))
+      tags = Some(List("Name")),
     )
 
   def empty = UpdateTodoRequest(None, None, None, None, None)
@@ -29,7 +29,7 @@ object UpdateTodoRequest {
 
 case class UserIdOrLogin(
     userId: Option[UUID],
-    login: Option[String]
+    login: Option[String],
 ) derives JsonDecoder,
       JsonEncoder
 
@@ -41,7 +41,7 @@ case class UpdateUserDataRequest(
     userId: Option[UUID],
     login: Option[String],
     email: Option[String],
-    phone: Option[String]
+    phone: Option[String],
 ) derives JsonDecoder,
       JsonEncoder
 object UpdateUserDataRequest {
@@ -53,7 +53,7 @@ case class CreateTodoRequest(
     description: Option[String],
     priority: Priority,
     completeAt: Option[Instant],
-    tags: List[String]
+    tags: List[String],
 ) derives JsonDecoder,
       JsonEncoder {
   def toToDoItem = TodoItem(
@@ -64,7 +64,7 @@ case class CreateTodoRequest(
     isComplete = false,
     createAt = Instant.now(),
     completeAt = completeAt,
-    tags = tags
+    tags = tags,
   )
 }
 object CreateTodoRequest {
@@ -74,6 +74,6 @@ object CreateTodoRequest {
       description = Some("Study ZIO effects and error handling"),
       priority = Priority.High,
       completeAt = None,
-      tags = List("Name")
+      tags = List("Name"),
     )
 }

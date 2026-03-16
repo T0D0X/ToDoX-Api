@@ -30,8 +30,8 @@ class JsonWriterSpec extends CommonJsonTests {
       isComplete = true,
       createAt = Instant.parse("2021-10-01T12:00:00Z"),
       completeAt = Some(Instant.parse("2023-10-01T12:00:00Z")),
-      tags = List("work", "urgent")
-    )
+      tags = List("work", "urgent"),
+    ),
   )
 
   testWrite(
@@ -54,8 +54,8 @@ class JsonWriterSpec extends CommonJsonTests {
       isComplete = true,
       createAt = Instant.parse("2021-10-01T12:00:00Z"),
       completeAt = None,
-      tags = List.empty
-    )
+      tags = List.empty,
+    ),
   )
 
   testWrite(
@@ -71,7 +71,7 @@ class JsonWriterSpec extends CommonJsonTests {
       userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
       login = "SlavaBuchnev",
       email = "slavabuchnev@pochta.ru",
-      phone = "+799999999"
-    )
+      phone = "+799999999",
+    ),
   )
 }

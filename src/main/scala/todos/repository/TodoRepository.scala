@@ -74,7 +74,7 @@ class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
       updateRequest.priority.map(p => fr"priority = $p"),
       updateRequest.isComplete.map(c => fr"is_complete = $c"),
       updateRequest.completeAt.map(ca => fr"completed_at = $ca"),
-      updateRequest.tags.map(t => fr"tags = $t")
+      updateRequest.tags.map(t => fr"tags = $t"),
     ).collect { case Some(fragment) => fragment }
 
     if (updates.isEmpty) {

@@ -17,7 +17,7 @@ object ToDoGenerators {
   implicit val genPriority: Gen[Any, Priority] = Gen.oneOf(
     Gen.const(Priority.Low),
     Gen.const(Priority.Medium),
-    Gen.const(Priority.High)
+    Gen.const(Priority.High),
   )
 
   implicit val genString: Gen[Any, String] =
@@ -33,32 +33,32 @@ object ToDoGenerators {
 
   implicit val genTodoItem: Gen[Any, TodoItem] =
     for {
-      id          <- genUUID
-      userId      <- genUUID
-      priority    <- genPriority
+      id <- genUUID
+      userId <- genUUID
+      priority <- genPriority
       description <- genOptionString
-      isComplete  <- Gen.boolean
-      createdAt   <- genInstant
+      isComplete <- Gen.boolean
+      createdAt <- genInstant
       completedAt <- Gen.option(genInstant)
-      tags        <- genTags
+      tags <- genTags
     } yield TodoItem(id, userId, description, priority, isComplete, createdAt, completedAt, tags)
 
   implicit val genCreateTodoRequest: Gen[Any, CreateTodoRequest] =
     for {
-      userId      <- genUUID
-      priority    <- genPriority
+      userId <- genUUID
+      priority <- genPriority
       description <- genOptionString
-      createdAt   <- genInstant
+      createdAt <- genInstant
       completedAt <- Gen.option(genInstant)
-      tags        <- genTags
+      tags <- genTags
     } yield CreateTodoRequest(userId, description, priority, completedAt, tags)
 
   implicit val genUserData: Gen[Any, UserData] =
     for {
       userId <- genUUID
-      login  <- genString
-      email  <- genString
-      phone  <- genString
+      login <- genString
+      email <- genString
+      phone <- genString
     } yield UserData(userId, login, email, phone)
 
   def generate[A](implicit gen: Gen[Any, A]): UIO[A] =

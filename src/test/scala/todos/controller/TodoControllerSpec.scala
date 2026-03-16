@@ -22,7 +22,7 @@ object TodoControllerSpec extends ZIOSpecDefault {
     isComplete = false,
     createAt = Instant.now(),
     completeAt = Some(Instant.now()),
-    tags = List.empty
+    tags = List.empty,
   )
 
   def spec = suite("TodoControllerSpec")(
@@ -30,57 +30,57 @@ object TodoControllerSpec extends ZIOSpecDefault {
       test("return  200 and todo found") {
         val app = createApp(mockService(getResult = ZIO.some(testTodo)))
         val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/${testId.toString}")
+          decodeUrl(s"api/v1/todos/get/${testId.toString}"),
         )
 
         for {
           response <- app(request)
-          body     <- response.body.asString
+          body <- response.body.asString
         } yield assertTrue(
           response.status == Status.Ok,
-          body.contains(testId.toString)
+          body.contains(testId.toString),
         )
       },
       test("return 404 todo not found") {
         val app = createApp(mockService(getResult = ZIO.none))
         val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/${testId.toString}")
+          decodeUrl(s"api/v1/todos/get/${testId.toString}"),
         )
 
         for {
           response <- app(request)
         } yield assertTrue(
-          response.status == Status.NotFound
+          response.status == Status.NotFound,
         )
       },
       test("return 400 no validate userId") {
         val app = createApp(mockService())
         val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/unknown")
+          decodeUrl(s"api/v1/todos/get/unknown"),
         )
 
         for {
           response <- app(request)
-          body     <- response.body.asString.option
+          body <- response.body.asString.option
         } yield assertTrue(
-          response.status == Status.BadRequest
+          response.status == Status.BadRequest,
         )
       },
       test("return 500 database failed") {
         val app = createApp(mockService(getResult = ZIO.fail(new RuntimeException("Database connection failed"))))
         val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/${testId.toString}")
+          decodeUrl(s"api/v1/todos/get/${testId.toString}"),
         )
 
         for {
           response <- app(request)
-          body     <- response.body.asString.option
+          body <- response.body.asString.option
         } yield assertTrue(
           response.status == Status.InternalServerError,
           body.isDefined,
-          body.exists(_.contains("DatabaseError"))
+          body.exists(_.contains("DatabaseError")),
         )
-      }
+      },
     ),
     suite("POST /api/v1/todos/create")(
       test("return 200 todo create") {
@@ -96,29 +96,29 @@ object TodoControllerSpec extends ZIOSpecDefault {
               |  "tags": [
               |    "string"
               |  ]
-              |}""".stripMargin
-          )
+              |}""".stripMargin,
+          ),
         )
 
         for {
           response <- app(request)
         } yield assertTrue(
-          response.status == Status.Ok
+          response.status == Status.Ok,
         )
       },
       test("return 400 JSON no validate") {
         val app = createApp(mockService())
         val request = Request.post(
           decodeUrl(s"api/v1/todos/create"),
-          Body.fromString("""{invalid json}""")
+          Body.fromString("""{invalid json}"""),
         )
 
         for {
           response <- app(request)
         } yield assertTrue(
-          response.status == Status.BadRequest
+          response.status == Status.BadRequest,
         )
-      }
+      },
     ),
     suite("PUT /api/v1/todos/update/{id}")(
       test("return 200 validate success") {
@@ -126,78 +126,78 @@ object TodoControllerSpec extends ZIOSpecDefault {
         val request = Request.put(
           decodeUrl(s"api/v1/todos/update/${testId.toString}"),
           Body.fromString(
-            """{"title":"Updated","description":"Updated Desc","isDone":true}"""
-          )
+            """{"title":"Updated","description":"Updated Desc","isDone":true}""",
+          ),
         )
 
         for {
           response <- app(request)
         } yield assertTrue(
-          response.status == Status.Ok
+          response.status == Status.Ok,
         )
       },
       test("return 404 todo not found") {
         val app = createApp(mockService(updateResult = ZIO.fail(TodoNotFoundError(testId.toString))))
         val request = Request.put(
           decodeUrl(s"api/v1/todos/update/${testId.toString}"),
-          Body.fromString("""{"title":"Updated"}""")
+          Body.fromString("""{"title":"Updated"}"""),
         )
 
         for {
           response <- app(request)
-          body     <- response.body.asString.option
+          body <- response.body.asString.option
         } yield assertTrue(
           response.status == Status.NotFound,
           body.exists(_.contains("NOT_FOUND_001")),
-          body.exists(_.contains(s"Todo with id $testId not found"))
+          body.exists(_.contains(s"Todo with id $testId not found")),
         )
-      }
+      },
     ),
     suite("DELETE /api/v1/todos/delete/{id}")(
       test("return 200 delete success") {
 
         val app = createApp(mockService(deleteResult = ZIO.unit))
         val request = Request.delete(
-          decodeUrl(s"api/v1/todos/delete/${testId.toString}")
+          decodeUrl(s"api/v1/todos/delete/${testId.toString}"),
         )
 
         for {
           response <- app(request)
         } yield assertTrue(
-          response.status == Status.Ok
+          response.status == Status.Ok,
         )
       },
       test("return 404 todo not found") {
         val app = createApp(mockService(deleteResult = ZIO.fail(TodoNotFoundError(testId.toString))))
         val request = Request.delete(
-          decodeUrl(s"api/v1/todos/delete/${testId.toString}")
+          decodeUrl(s"api/v1/todos/delete/${testId.toString}"),
         )
 
         for {
           response <- app(request)
-          body     <- response.body.asString.option
+          body <- response.body.asString.option
         } yield assertTrue(
           response.status == Status.NotFound,
           body.exists(_.contains("NOT_FOUND_001")),
-          body.exists(_.contains(s"Todo with id $testId not found"))
+          body.exists(_.contains(s"Todo with id $testId not found")),
         )
-      }
+      },
     ),
     suite("GET /api/v1/todos/user/{id}")(
       test("return 200 success operation") {
         val app = createApp(mockService(getByUserIdResult = ZIO.succeed(List(testTodo))))
         val request = Request.get(
-          decodeUrl(s"api/v1/todos/user/${testTodo.userId}")
+          decodeUrl(s"api/v1/todos/user/${testTodo.userId}"),
         )
 
         for {
           response <- app(request)
         } yield assertTrue(
-          response.status == Status.Ok
+          response.status == Status.Ok,
         )
-      }
+      },
       // Todo: после реализации проверки есть ли такой пользователь добавить тест
-    )
+    ),
   )
 
   private def mockService(
@@ -205,7 +205,7 @@ object TodoControllerSpec extends ZIOSpecDefault {
       createResult: Task[Unit] = ZIO.unit,
       updateResult: Task[Unit] = ZIO.unit,
       deleteResult: Task[Unit] = ZIO.unit,
-      getByUserIdResult: Task[List[TodoItem]] = ZIO.succeed(List.empty[TodoItem])
+      getByUserIdResult: Task[List[TodoItem]] = ZIO.succeed(List.empty[TodoItem]),
   ): TodoService = new TodoService {
     override def get(id: UUID): Task[Option[TodoItem]] = getResult
 
