@@ -15,15 +15,6 @@ case class UpdateTodoRequest(
       JsonEncoder
 
 object UpdateTodoRequest {
-  def example =
-    UpdateTodoRequest(
-      description = Some("Study ZIO effects and error handling"),
-      priority = Some(Priority.High),
-      isComplete = Some(false),
-      completeAt = None,
-      tags = Some(List("Name")),
-    )
-
   def empty = UpdateTodoRequest(None, None, None, None, None)
 }
 
@@ -66,14 +57,4 @@ case class CreateTodoRequest(
     completeAt = completeAt,
     tags = tags,
   )
-}
-object CreateTodoRequest {
-  def example =
-    CreateTodoRequest(
-      userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-      description = Some("Study ZIO effects and error handling"),
-      priority = Priority.High,
-      completeAt = None,
-      tags = List("Name"),
-    )
 }

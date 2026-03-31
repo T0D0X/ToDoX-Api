@@ -3,7 +3,7 @@ package todos.errors
 import zio.json._
 import java.time.Instant
 
-/** Unified error response for API
+/** Error response for API
   */
 case class ErrorResponse(
     error: String,

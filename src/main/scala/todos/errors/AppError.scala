@@ -1,7 +1,5 @@
 package todos.errors
 
-/** Иерархия ошибок приложения
-  */
 sealed trait AppError extends Throwable {
   def message: String
   def code: String
@@ -18,37 +16,12 @@ object AppErrors {
     override def code: String = "VALIDATION_001"
   }
 
-  case class FieldLengthError(fieldName: String, maxLength: Int, actualLength: Int) extends ValidationErrorBase {
-    override def message: String = s"Field '$fieldName' cannot exceed $maxLength characters (got $actualLength)"
-    override def code: String = "VALIDATION_002"
-  }
-
-  case class InvalidDateError(fieldName: String, reason: String) extends ValidationErrorBase {
-    override def message: String = s"Invalid date for field '$fieldName': $reason"
-    override def code: String = "VALIDATION_003"
-  }
-
-  case class InvalidFormatError(fieldName: String, expectedFormat: String) extends ValidationErrorBase {
-    override def message: String = s"Field '$fieldName' has invalid format. Expected: $expectedFormat"
-    override def code: String = "VALIDATION_004"
-  }
-
-  case class InvalidUUIDError(fieldName: String, value: String) extends ValidationErrorBase {
-    override def message: String = s"Field '$fieldName' must be a valid UUID (got: $value)"
-    override def code: String = "VALIDATION_005"
-  }
-
   // ============ NOT FOUND ERRORS ============
   sealed trait NotFoundErrorBase extends AppError
 
   case class TodoNotFoundError(todoId: String) extends NotFoundErrorBase {
     override def message: String = s"Todo with id $todoId not found"
     override def code: String = "NOT_FOUND_001"
-  }
-
-  case class UserNotFoundError(userId: String) extends NotFoundErrorBase {
-    override def message: String = s"User with id $userId not found"
-    override def code: String = "NOT_FOUND_002"
   }
 
   case class RequestNotFoundError(message: String) extends NotFoundErrorBase {
@@ -58,11 +31,5 @@ object AppErrors {
 
   // ============ DATABASE ERRORS ============
   sealed trait DatabaseErrorBase extends AppError
-
-  case class DatabaseOperationError(operation: String, mes: String) extends DatabaseErrorBase {
-    override def message: String = s"Database error during $operation  because $mes"
-
-    override def code: String = "DB_001"
-  }
 
 }

@@ -4,6 +4,7 @@ target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
+.idea
 .idea/
 *.iws
 *.iml
@@ -46,3 +47,4 @@ build/
 # Docker (генерируемые файлы)
 .docker/
 .bsp
+/.idea/
