@@ -43,7 +43,8 @@ val scalaRules = Seq(
 
 coverageOutputHTML := true
 coverageOutputXML := true
-coverageExcludedFiles := ".*/generated/.*;.*/flyway/.*;.*/Main\\.scala"
+coverageExcludedFiles := ".*/App\\.scala"
+
 lazy val root = (project in file("."))
   .settings(
     name := "ToDoX-Api",
