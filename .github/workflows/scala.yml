@@ -31,7 +31,14 @@ jobs:
           ./scripts/setup-docker.sh
 
       - name: Run tests
-        run: sbt test
+        run: sbt coverage test coverageAggregate
+
+      - name: coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./target/scala-*/scoverage-report/scoverage.xml
+          flags: unittests
+          name: codecov-umbrella
 
       - name: Cleanup
         if: always()
