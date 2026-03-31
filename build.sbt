@@ -40,6 +40,8 @@ val scalaRules = Seq(
   "-Wunused:imports", // выдает предупрждения о неиспользованых  importов
   "-Wconf:msg=unused import:e", // превращает warnings в errors
 )
+
+coverageEnabled := true
 coverageOutputHTML := true
 coverageOutputXML := true
 
