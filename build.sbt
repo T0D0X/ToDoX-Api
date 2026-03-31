@@ -43,7 +43,7 @@ val scalaRules = Seq(
 
 coverageOutputHTML := true
 coverageOutputXML := true
-coverageExcludedFiles := ".*/App\\.scala"
+coverageExcludedPackages := "<empty>;"
 
 lazy val root = (project in file("."))
   .settings(
