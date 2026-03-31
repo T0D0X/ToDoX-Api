@@ -16,4 +16,3 @@ trait TodoRepository {
 
   def deleteTodoItem(id: UUID): Task[Unit]
 }
-
