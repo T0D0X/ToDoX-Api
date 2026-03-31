@@ -33,18 +33,11 @@ jobs:
       - name: Run tests
         run: sbt coverage test coverageAggregate
 
-      - name: Upload coverage to Coveralls
+      - name: coverage
         run: sbt coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: Scala 3.3.7
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./target/scala-*/scoverage-report/scoverage.xml
-          flags: unittests
-          name: codecov-umbrella
 
       - name: Cleanup
         if: always()
