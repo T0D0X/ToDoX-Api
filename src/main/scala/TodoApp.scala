@@ -1,10 +1,10 @@
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.controller.TodoController
-import todos.repository.PostgresTodoRepository
 import todos.service.TodoServiceImpl
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import todos.config.DataBaseConfig
+import todos.repository.todoimpl.PostgresTodoRepository
 import zio.*
 import zio.http.Server
 

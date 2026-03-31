@@ -1,4 +1,5 @@
 [![Scala CI](https://github.com/T0D0X/ToDoX-Api/actions/workflows/scala.yml/badge.svg)](https://github.com/T0D0X/ToDoX-Api/actions/workflows/scala.yml)
+[![Coverage Status](https://coveralls.io/repos/github/T0D0X/ToDoX-Api/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/T0D0X/ToDoX-Api)
 # ToDoX-Api
 
 Простое и эффективное REST API для управления задачами, построенное на стеке **Scala 3 + ZIO 2 + ZIO HTTP + Doobie**.

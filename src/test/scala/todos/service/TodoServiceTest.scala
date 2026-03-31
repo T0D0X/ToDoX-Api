@@ -4,7 +4,7 @@ import todos.errors.AppErrors.*
 import todos.utils.ToDoGenerators.*
 import todos.utils.CommonUtilsTests
 import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
-import todos.repository.TodoRepository
+import todos.repository.todoimpl.TodoRepository
 import zio.ZIO
 
 import java.util.UUID

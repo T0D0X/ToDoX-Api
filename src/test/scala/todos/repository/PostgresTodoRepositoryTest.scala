@@ -9,6 +9,7 @@ import todos.config.DataBaseConfig
 import zio.interop.catz.*
 import zio.test.TestAspect.*
 import todos.models.*
+import todos.repository.todoimpl.{PostgresTodoRepository, TodoRepository}
 
 import java.util.UUID
 
