@@ -119,6 +119,32 @@ object TodoControllerSpec extends ZIOSpecDefault {
           response.status == Status.BadRequest,
         )
       },
+      test("return 500 database failed") {
+        val app = createApp(mockService(createResult = ZIO.fail(new RuntimeException("Database connection failed"))))
+        val request = Request.post(
+          decodeUrl(s"api/v1/todos/create"),
+          Body.fromString(
+            """{
+              |  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              |  "description": "string",
+              |  "priority": "low",
+              |  "completeAt": "2025-12-14T07:22:02.250Z",
+              |  "tags": [
+              |    "string"
+              |  ]
+              |}""".stripMargin,
+          ),
+        )
+
+        for {
+          response <- app(request)
+          body <- response.body.asString.option
+        } yield assertTrue(
+          response.status == Status.InternalServerError,
+          body.isDefined,
+          body.exists(_.contains("DatabaseError")),
+        )
+      },
     ),
     suite("PUT /api/v1/todos/update/{id}")(
       test("return 200 validate success") {
@@ -134,6 +160,21 @@ object TodoControllerSpec extends ZIOSpecDefault {
           response <- app(request)
         } yield assertTrue(
           response.status == Status.Ok,
+        )
+      },
+      test("return validation error") {
+        val app = createApp(mockService(updateResult = ZIO.fail(EmptyFieldError())))
+        val request = Request.put(
+          decodeUrl(s"api/v1/todos/update/${testId.toString}"),
+          Body.fromString("""{}"""),
+        )
+
+        for {
+          response <- app(request)
+          body <- response.body.asString.option
+        } yield assertTrue(
+          response.status == Status.UnprocessableEntity,
+          body.exists(_.contains("VALIDATION_001")),
         )
       },
       test("return 404 todo not found") {
@@ -194,6 +235,22 @@ object TodoControllerSpec extends ZIOSpecDefault {
           response <- app(request)
         } yield assertTrue(
           response.status == Status.Ok,
+        )
+      },
+      test("return 500 database failed") {
+        val app =
+          createApp(mockService(getByUserIdResult = ZIO.fail(new RuntimeException("Database connection failed"))))
+        val request = Request.get(
+          decodeUrl(s"api/v1/todos/user/${testTodo.userId}"),
+        )
+
+        for {
+          response <- app(request)
+          body <- response.body.asString.option
+        } yield assertTrue(
+          response.status == Status.InternalServerError,
+          body.isDefined,
+          body.exists(_.contains("DatabaseError")),
         )
       },
       // Todo: после реализации проверки есть ли такой пользователь добавить тест
