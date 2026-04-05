@@ -1,14 +1,15 @@
-package todos.repository
+package postgres
 
-import zio.*
-import zio.test.*
 import doobie.*
 import doobie.implicits.*
-import zio.interop.catz.*
-import zio.test.TestAspect.*
 import todos.config.DataBaseConfig
 import todos.models.UserData
+import todos.repository.{PostgresUserRepository, UserRepository}
 import todos.utils.ToDoGenerators.*
+import zio.*
+import zio.interop.catz.*
+import zio.test.*
+import zio.test.TestAspect.*
 
 import java.util.UUID
 

@@ -283,7 +283,7 @@ object TodoControllerSpec extends ZIOSpecDefault {
     }
 
   private def createApp(service: TodoService): Routes[Any, Response] = {
-    val controller = new TodoController(service)
+    val controller = TodoController.make(service)
     ZioHttpInterpreter().toHttp(controller.allEndpoints)
   }
 }

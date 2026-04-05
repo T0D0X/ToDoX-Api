@@ -1,16 +1,17 @@
-package todos.repository
+package postgres
 
-import todos.utils.ToDoGenerators.*
-import zio.*
-import zio.test.*
 import doobie.*
 import doobie.implicits.*
 import todos.config.DataBaseConfig
-import zio.interop.catz.*
-import zio.test.TestAspect.*
 import todos.models.*
 import todos.repository.todoimpl.{PostgresTodoRepository, TodoRepository}
+import todos.utils.ToDoGenerators.*
+import zio.*
+import zio.interop.catz.*
+import zio.test.*
+import zio.test.TestAspect.*
 
+import java.time.Instant
 import java.util.UUID
 
 object PostgresTodoRepositoryTest extends ZIOSpecDefault {
@@ -41,7 +42,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         result <- repo.getAllByUserId(todos.userId)
       } yield assertTrue(result.size == 1 && result.head == todos)
     },
@@ -59,7 +60,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         result <- repo.getById(todos.id)
       } yield assertTrue(result.contains(todos))
     },
@@ -70,7 +71,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         before <- repo.getById(todos.id)
         _ <- repo.deleteTodoItem(todos.id)
         after <- repo.getById(todos.id)
@@ -83,13 +84,63 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
-        request = UpdateTodoRequest(Some("aaa"), None, None, None, None)
+        newTodos <- generate[TodoItem]
+        _ <- repo.createTodoItem(todos)
+        request = UpdateTodoRequest(
+          newTodos.description,
+          Some(newTodos.priority),
+          Some(newTodos.isComplete),
+          newTodos.completeAt,
+          Some(newTodos.tags),
+        )
         _ <- repo.updateTodoItem(todos.id, request)
         result <- repo.getAllByUserId(todos.userId)
       } yield assertTrue(
         result.size == 1 &&
-          result.head.description.contains("aaa") &&
+          result.head.id == todos.id &&
+          result.head.userId == todos.userId &&
+          newTodos.description.forall(sub => result.head.description.exists(_.contains(sub))) &&
+          result.head.priority == newTodos.priority &&
+          result.head.isComplete == newTodos.isComplete &&
+          result.head.tags == newTodos.tags,
+      )
+    },
+    test("update zero") {
+      for {
+        repo <- ZIO.service[TodoRepository]
+        todos <- generate[TodoItem]
+        newTodos <- generate[TodoItem]
+        _ <- repo.createTodoItem(todos)
+        request = UpdateTodoRequest.empty
+        _ <- repo.updateTodoItem(todos.id, request)
+        result <- repo.getAllByUserId(todos.userId)
+      } yield assertTrue(
+        result.size == 1 &&
+          result.head.id == todos.id &&
+          result.head.userId == todos.userId &&
+          todos.description.forall(sub => result.head.description.exists(_.contains(sub))) &&
+          result.head.priority == todos.priority &&
+          result.head.isComplete == todos.isComplete &&
+          result.head.tags == todos.tags,
+      )
+    },
+    test("update desc and completeAt") {
+      for {
+        repo <- ZIO.service[TodoRepository]
+        todos <- generate[TodoItem]
+        time <- generate[Instant]
+        _ <- repo.createTodoItem(todos)
+        request = UpdateTodoRequest.empty.copy(
+          description = Some("aaa"),
+          completeAt = Some(time),
+        )
+        _ <- repo.updateTodoItem(todos.id, request)
+        result <- repo.getAllByUserId(todos.userId)
+      } yield assertTrue(
+        result.size == 1 &&
+          result.head.id == todos.id &&
+          result.head.userId == todos.userId &&
+          request.description.forall(sub => result.head.description.exists(_.contains(sub))) &&
           result.head.priority == todos.priority &&
           result.head.isComplete == todos.isComplete &&
           result.head.tags == todos.tags,

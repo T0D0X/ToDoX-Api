@@ -29,7 +29,7 @@ class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
       .option
       .transact(xa)
 
-  override def crateTodoItem(item: TodoItem): Task[Unit] =
+  override def createTodoItem(item: TodoItem): Task[Unit] =
     sql"""
 					INSERT INTO todo_items(
 					user_id,

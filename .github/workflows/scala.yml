@@ -31,7 +31,7 @@ jobs:
           ./scripts/setup-docker.sh
 
       - name: Run tests
-        run: sbt coverage test coverageAggregate
+        run: sbt coverage test it-tests/test coverageAggregate
 
       - name: coverage
         run: sbt coveralls

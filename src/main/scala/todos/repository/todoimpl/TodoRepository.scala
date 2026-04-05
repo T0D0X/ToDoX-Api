@@ -10,7 +10,7 @@ trait TodoRepository {
 
   def getById(id: UUID): Task[Option[TodoItem]]
 
-  def crateTodoItem(item: TodoItem): Task[Unit]
+  def createTodoItem(item: TodoItem): Task[Unit]
 
   def updateTodoItem(id: UUID, updateRequest: UpdateTodoRequest): Task[Unit]
 

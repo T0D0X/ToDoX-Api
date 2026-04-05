@@ -62,7 +62,7 @@ class TodoServiceTest extends CommonUtilsTests {
   }
 
   "create" should "Success operation" in new Testing {
-    todoRepository.crateTodoItem.expects(*).returns(ZIO.unit)
+    todoRepository.createTodoItem.expects(*).returns(ZIO.unit)
 
     checkSuccess(service.create(todoCreate))(())
   }
@@ -79,6 +79,6 @@ class TodoServiceTest extends CommonUtilsTests {
     val todoCreate = generateUnsafe[CreateTodoRequest].copy(userId = todoItem.userId)
     val id = generateUnsafe[UUID]
     val todoRepository: TodoRepository = mock[TodoRepository]
-    val service = new TodoServiceImpl(todoRepository)
+    val service = TodoServiceImpl.make(todoRepository)
   }
 }

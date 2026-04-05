@@ -61,7 +61,7 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
   override def create(createTodoRequest: CreateTodoRequest): Task[Unit] =
     for {
       // TODO: сделать проверку что такой пользователь существует, пока что давать разрешать так делать
-      _ <- todoRepository.crateTodoItem(createTodoRequest.toToDoItem)
+      _ <- todoRepository.createTodoItem(createTodoRequest.toToDoItem)
     } yield ()
 
   override def getByUserId(userId: UUID): Task[List[TodoItem]] =
