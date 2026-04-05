@@ -79,6 +79,6 @@ class TodoServiceTest extends CommonUtilsTests {
     val todoCreate = generateUnsafe[CreateTodoRequest].copy(userId = todoItem.userId)
     val id = generateUnsafe[UUID]
     val todoRepository: TodoRepository = mock[TodoRepository]
-    val service = new TodoServiceImpl(todoRepository)
+    val service = TodoServiceImpl.make(todoRepository)
   }
 }
