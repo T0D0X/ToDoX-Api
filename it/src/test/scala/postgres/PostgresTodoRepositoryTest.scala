@@ -1,15 +1,15 @@
-package todos.repository
+package postgres
 
-import todos.utils.ToDoGenerators.*
-import zio.*
-import zio.test.*
 import doobie.*
 import doobie.implicits.*
 import todos.config.DataBaseConfig
-import zio.interop.catz.*
-import zio.test.TestAspect.*
 import todos.models.*
 import todos.repository.todoimpl.{PostgresTodoRepository, TodoRepository}
+import todos.utils.ToDoGenerators.*
+import zio.*
+import zio.interop.catz.*
+import zio.test.*
+import zio.test.TestAspect.*
 
 import java.util.UUID
 
@@ -41,7 +41,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         result <- repo.getAllByUserId(todos.userId)
       } yield assertTrue(result.size == 1 && result.head == todos)
     },
@@ -59,7 +59,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         result <- repo.getById(todos.id)
       } yield assertTrue(result.contains(todos))
     },
@@ -70,7 +70,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         before <- repo.getById(todos.id)
         _ <- repo.deleteTodoItem(todos.id)
         after <- repo.getById(todos.id)
@@ -83,7 +83,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
       for {
         repo <- ZIO.service[TodoRepository]
         todos <- generate[TodoItem]
-        _ <- repo.crateTodoItem(todos)
+        _ <- repo.createTodoItem(todos)
         request = UpdateTodoRequest(Some("aaa"), None, None, None, None)
         _ <- repo.updateTodoItem(todos.id, request)
         result <- repo.getAllByUserId(todos.userId)

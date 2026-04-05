@@ -62,7 +62,7 @@ class TodoServiceTest extends CommonUtilsTests {
   }
 
   "create" should "Success operation" in new Testing {
-    todoRepository.crateTodoItem.expects(*).returns(ZIO.unit)
+    todoRepository.createTodoItem.expects(*).returns(ZIO.unit)
 
     checkSuccess(service.create(todoCreate))(())
   }

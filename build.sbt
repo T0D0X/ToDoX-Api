@@ -54,4 +54,13 @@ lazy val root = (project in file("."))
     Test / parallelExecution := true,
   )
 
-addCommandAlias("compileAll", ";compile;Test/compile")
+lazy val `it-tests` = (project in file("it"))
+  .settings(
+    name := "integration-tests",
+    scalacOptions ++= scalaRules,
+    libraryDependencies ++= library,
+    Test / parallelExecution := false,
+  )
+  .dependsOn(root % "test->test")
+
+addCommandAlias("testAll", ";test;it-tests/test")
