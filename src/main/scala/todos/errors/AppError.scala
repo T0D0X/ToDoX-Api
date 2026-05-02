@@ -32,4 +32,13 @@ object AppErrors {
   // ============ DATABASE ERRORS ============
   sealed trait DatabaseErrorBase extends AppError
 
+  sealed trait JwtTokenErrorBase extends AppError
+
+  case class InvalidTokenError(token: String) extends JwtTokenErrorBase {
+    override def message: String = s"invalid token $token"
+    override def code: String = "TOKEN_ERROR_001"
+
+  }
+  sealed trait AuthError extends AppError
+
 }
