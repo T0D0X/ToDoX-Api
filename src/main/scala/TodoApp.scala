@@ -1,6 +1,6 @@
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.controller.{AuthController, TodoController}
-import todos.service.{AuthServiceImpl, JwtServiceImpl, TodoServiceImpl, UserServiceImpl}
+import todos.service.{AuthServiceImpl, JwtServiceImpl, TodoServiceImpl}
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import todos.config.{AuthConfig, DataBaseConfig, JwtConfig}
@@ -54,7 +54,6 @@ object TodoApp extends ZIOAppDefault {
     AuthServiceImpl.live,
     JwtServiceImpl.live,
     TodoServiceImpl.live,
-    UserServiceImpl.live,
     // controllers
     AuthController.live,
     TodoController.live,
