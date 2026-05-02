@@ -3,7 +3,7 @@ package todos.service
 import todos.errors.AppErrors.*
 import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
 import todos.repository.todoimpl.TodoRepository
-import zio.{Task, ZIO}
+import zio.{Task, ZIO, ZLayer}
 
 import java.util.UUID
 
@@ -71,4 +71,6 @@ class TodoServiceImpl(todoRepository: TodoRepository) extends TodoService {
 object TodoServiceImpl {
   def make(todoRepository: TodoRepository): TodoService =
     new TodoServiceImpl(todoRepository)
+
+  val live = ZLayer.fromFunction(new TodoServiceImpl(_))
 }

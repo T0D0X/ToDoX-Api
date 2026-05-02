@@ -1,14 +1,16 @@
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.controller.TodoController
-import todos.service.TodoServiceImpl
+import todos.controller.{AuthController, TodoController}
+import todos.service.{AuthServiceImpl, JwtServiceImpl, TodoServiceImpl, UserServiceImpl}
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import todos.config.DataBaseConfig
+import todos.config.{AuthConfig, DataBaseConfig, JwtConfig}
 import todos.repository.todoimpl.PostgresTodoRepository
+import todos.repository.userimpl.PostgresUserRepository
 import zio.*
 import zio.http.Server
 
 object TodoApp extends ZIOAppDefault {
+  type AppEnv = TodoController & AuthController
 
   val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
     def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
@@ -40,19 +42,32 @@ object TodoApp extends ZIOAppDefault {
       }
   }
 
-  val appLayer =
-    DataBaseConfig.todoLayer >>>
-      ZLayer.fromFunction(PostgresTodoRepository(_)) >>>
-      ZLayer.fromFunction(TodoServiceImpl.make) >>>
-      ZLayer.fromFunction(new TodoController(_))
+  val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
+    // configs
+    DataBaseConfig.live,
+    JwtConfig.live,
+    AuthConfig.live,
+    // repositories
+    PostgresTodoRepository.live,
+    PostgresUserRepository.live,
+    // services
+    AuthServiceImpl.live,
+    JwtServiceImpl.live,
+    TodoServiceImpl.live,
+    UserServiceImpl.live,
+    // controllers
+    AuthController.live,
+    TodoController.live,
+  )
 
   override def run: ZIO[Any, Throwable, Unit] = (for {
     port <- System.env("PORT").map(_.flatMap(_.toIntOption).getOrElse(9090))
-    controller <- ZIO.service[TodoController]
+    todoController <- ZIO.service[TodoController]
+    authController <- ZIO.service[AuthController]
 
     _ <- ZIO.logInfo(s"Starting server on port $port")
 
-    apiEndpoints = controller.allEndpoints
+    apiEndpoints = todoController.allEndpoints ++ authController.allEndpoints
     swaggerEndpoints = SwaggerInterpreter()
       .fromServerEndpoints[Task](
         apiEndpoints,
@@ -71,5 +86,5 @@ object TodoApp extends ZIOAppDefault {
         ZLayer.succeed(Server.Config.default.port(port)),
         Server.live,
       )
-  } yield ()).provideSomeLayer[Any](appLayer)
+  } yield ()).provideLayer(appLayer)
 }

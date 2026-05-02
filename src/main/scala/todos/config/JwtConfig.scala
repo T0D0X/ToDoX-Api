@@ -1,7 +1,7 @@
 package todos.config
 
 import pureconfig.{ConfigReader, ConfigSource}
-import zio.ZIO
+import zio.{ZIO, ZLayer}
 
 case class JwtConfig(
     secret: String,
@@ -10,6 +10,5 @@ case class JwtConfig(
 ) derives ConfigReader
 
 object JwtConfig {
-  val jwtL: ZIO[Any, Throwable, JwtConfig] =
-    ZIO.attempt(ConfigSource.default.at("jwt").loadOrThrow[JwtConfig])
+  val live = ZLayer.fromZIO(ZIO.attempt(ConfigSource.default.at("jwt").loadOrThrow[JwtConfig]))
 }

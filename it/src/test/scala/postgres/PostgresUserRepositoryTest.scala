@@ -17,7 +17,7 @@ object PostgresUserRepositoryTest extends ZIOSpecDefault {
   val transactorLayer: ZLayer[Any, Throwable, UserRepository] =
     ZLayer.scoped {
       for {
-        xa <- DataBaseConfig.usersL
+        xa <- DataBaseConfig.lZio
         _ <- ZIO.addFinalizer(cleanDatabase(xa).orDie)
       } yield new PostgresUserRepository(xa)
     }

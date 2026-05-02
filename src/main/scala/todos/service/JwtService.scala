@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import todos.config.JwtConfig
 import todos.errors.AppErrors.{AuthErrorBase, InvalidTokenError}
-import zio.{IO, Task, ZIO}
+import zio.{IO, Task, ZIO, ZLayer}
 
 import java.time.Instant
 import java.util.{Date, UUID}
@@ -44,4 +44,8 @@ class JwtServiceImpl(jwtConfig: JwtConfig) extends JwtService {
       .attempt(verifier.verify(token))
       .map(decoded => UUID.fromString(decoded.getSubject))
       .catchAll(_ => ZIO.fail(InvalidTokenError(token)))
+}
+
+object JwtServiceImpl {
+  val live = ZLayer.fromFunction(new JwtServiceImpl(_))
 }

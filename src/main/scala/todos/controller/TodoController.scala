@@ -10,6 +10,7 @@ import todos.errors.ErrorResponse.*
 import sttp.tapir.ztapir.*
 import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
 import todos.service.TodoService
+import zio.ZLayer
 
 import java.util.UUID
 import java.time.Instant
@@ -153,4 +154,6 @@ class TodoController(todoService: TodoService) {
 object TodoController {
   def make(todoService: TodoService): TodoController =
     new TodoController(todoService)
+
+  val live = ZLayer.fromFunction(new TodoController(_))
 }

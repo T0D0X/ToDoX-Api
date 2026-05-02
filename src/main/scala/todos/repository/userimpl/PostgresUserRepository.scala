@@ -4,7 +4,7 @@ import doobie.*
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import todos.models.UserData
-import zio.Task
+import zio.{Task, ZLayer}
 import zio.interop.catz.*
 
 import java.util.UUID
@@ -55,4 +55,8 @@ class PostgresUserRepository(xa: Transactor[Task]) extends UserRepository {
     sql"""DELETE FROM users WHERE login = $login""".update.run
       .transact(xa)
       .unit
+}
+
+object PostgresUserRepository {
+  val live = ZLayer.fromFunction(new PostgresUserRepository(_))
 }

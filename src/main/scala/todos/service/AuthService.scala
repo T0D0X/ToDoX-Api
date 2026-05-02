@@ -4,7 +4,7 @@ import todos.errors.AppErrors.{PasswordError, UserAlreadyExistsError, UserNotFou
 import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserData, UserResponse}
 import todos.repository.userimpl.UserRepository
 import todos.util.HashingUtil
-import zio.{Task, ZIO}
+import zio.{Task, ZIO, ZLayer}
 
 import java.util.UUID
 
@@ -42,4 +42,8 @@ class AuthServiceImpl(
     token = token,
     user = user.toResponse,
   )
+}
+
+object AuthServiceImpl {
+  val live = ZLayer.fromFunction(new AuthServiceImpl(_, _))
 }

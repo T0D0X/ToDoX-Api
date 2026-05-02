@@ -19,7 +19,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
   val transactorLayer: ZLayer[Any, Throwable, TodoRepository] =
     ZLayer.scoped {
       for {
-        xa <- DataBaseConfig.todoL
+        xa <- DataBaseConfig.lZio
         _ <- ZIO.addFinalizer(cleanDatabase(xa).orDie)
       } yield new PostgresTodoRepository(xa)
     }
