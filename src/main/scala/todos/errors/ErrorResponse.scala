@@ -1,6 +1,8 @@
 package todos.errors
 
-import zio.json._
+import todos.errors.AppErrors.JwtTokenErrorBase
+import zio.json.{JsonDecoder, JsonEncoder}
+
 import java.time.Instant
 
 /** Error response for API
@@ -10,13 +12,10 @@ case class ErrorResponse(
     code: String,
     message: String,
     timestamp: Instant = Instant.now(),
-)
+) derives JsonDecoder,
+      JsonEncoder
 
 object ErrorResponse {
-  implicit val encoder: JsonEncoder[ErrorResponse] =
-    DeriveJsonEncoder.gen[ErrorResponse]
-  implicit val decoder: JsonDecoder[ErrorResponse] =
-    DeriveJsonDecoder.gen[ErrorResponse]
 
   def fromAppError(error: AppError): ErrorResponse =
     error match {
@@ -24,21 +23,27 @@ object ErrorResponse {
         ErrorResponse(
           error = "ValidationError",
           code = v.code,
-          message = v.message,
+          message = v.getMessage,
         )
 
       case n: AppErrors.NotFoundErrorBase =>
         ErrorResponse(
           error = "NotFoundError",
           code = n.code,
-          message = n.message,
+          message = n.getMessage,
+        )
+      case j: JwtTokenErrorBase =>
+        ErrorResponse(
+          error = "JwtTokenError",
+          code = j.code,
+          message = j.getMessage,
         )
 
       case d: AppErrors.DatabaseErrorBase =>
         ErrorResponse(
           error = "DatabaseError",
           code = d.code,
-          message = d.message,
+          message = d.getMessage,
         )
     }
 }

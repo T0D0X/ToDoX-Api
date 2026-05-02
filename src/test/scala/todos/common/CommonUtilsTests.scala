@@ -1,4 +1,4 @@
-package todos.utils
+package todos.common
 
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec

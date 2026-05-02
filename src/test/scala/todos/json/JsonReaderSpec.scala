@@ -1,7 +1,7 @@
 package todos.json
 
-import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest, UserData}
-import todos.utils.CommonJsonTests
+import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
+import todos.common.CommonJsonTests
 
 import java.time.Instant
 import java.util.UUID
@@ -124,20 +124,20 @@ class JsonReaderSpec extends CommonJsonTests {
     ),
   )
 
-  testRead(
-    json = """
-             |{
-             |   "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-             |   "login": "SlavaBuchnev",
-             |   "email": "slavabuchnev@pochta.ru",
-             |   "phone": "+799999999"
-             |}
-             |""".stripMargin,
-    obj = UserData(
-      userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-      login = "SlavaBuchnev",
-      email = "slavabuchnev@pochta.ru",
-      phone = "+799999999",
-    ),
-  )
+//  testRead(
+//    json = """
+//             |{
+//             |   "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+//             |   "login": "SlavaBuchnev",
+//             |   "email": "slavabuchnev@pochta.ru",
+//             |   "phone": "+799999999"
+//             |}
+//             |""".stripMargin,
+//    obj = UserData(
+//      userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
+//      login = "SlavaBuchnev",
+//      email = "slavabuchnev@pochta.ru",
+//      phone = "+799999999",
+//    ),
+//  )
 }

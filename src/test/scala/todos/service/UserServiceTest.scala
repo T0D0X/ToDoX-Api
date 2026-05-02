@@ -3,8 +3,8 @@ package todos.service
 import todos.errors.AppErrors.RequestNotFoundError
 import todos.models.{UpdateUserDataRequest, UserData, UserIdOrLogin}
 import todos.repository.UserRepository
-import todos.utils.CommonUtilsTests
-import todos.utils.ToDoGenerators.*
+import todos.common.CommonUtilsTests
+import todos.common.ToDoGenerators.*
 import zio.ZIO
 
 class UserServiceTest extends CommonUtilsTests {
@@ -12,7 +12,7 @@ class UserServiceTest extends CommonUtilsTests {
   "get" should "return UserData by userId" in new Testing {
     userRepository.getByUserId.expects(user.userId).returns(ZIO.some(user))
 
-    checkSuccess(sevice.get(userIdOrLoginEmpty.copy(userId = Some(user.userId))))(Some(user))
+    checkSuccess(sevice.get(userIdOrLoginEmpty.copy(userId = Some(user.userId))))(Some(user.toResponse))
   }
 
   it should "return None by userId" in new Testing {
@@ -24,7 +24,7 @@ class UserServiceTest extends CommonUtilsTests {
   it should "return UserData by login" in new Testing {
     userRepository.getByLogin.expects(user.login).returns(ZIO.some(user))
 
-    checkSuccess(sevice.get(userIdOrLoginEmpty.copy(login = Some(user.login))))(Some(user))
+    checkSuccess(sevice.get(userIdOrLoginEmpty.copy(login = Some(user.login))))(Some(user.toResponse))
   }
 
   it should "return None by login" in new Testing {

@@ -28,6 +28,12 @@ object UserIdOrLogin {
   def empty = UserIdOrLogin(None, None)
 }
 
+case class UserIdOrLoginRequest(
+    userId: Option[UUID],
+    login: Option[String],
+) derives JsonDecoder,
+      JsonEncoder
+
 case class UpdateUserDataRequest(
     userId: Option[UUID],
     login: Option[String],
@@ -58,3 +64,18 @@ case class CreateTodoRequest(
     tags = tags,
   )
 }
+
+case class RegisterRequest(
+    login: String,
+    email: String,
+    phone: String,
+    password: String,
+) derives JsonDecoder,
+      JsonEncoder
+
+case class JwtResponse(
+    token: String,
+    user: UserResponse,
+    expiresAt: Long,
+) derives JsonDecoder,
+      JsonEncoder

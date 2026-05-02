@@ -5,7 +5,7 @@ import doobie.implicits.*
 import todos.config.DataBaseConfig
 import todos.models.UserData
 import todos.repository.{PostgresUserRepository, UserRepository}
-import todos.utils.ToDoGenerators.*
+import todos.common.ToDoGenerators.*
 import zio.*
 import zio.interop.catz.*
 import zio.test.*

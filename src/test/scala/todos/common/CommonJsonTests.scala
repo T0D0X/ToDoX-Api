@@ -1,4 +1,4 @@
-package todos.utils
+package todos.common
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

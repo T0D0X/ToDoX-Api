@@ -8,6 +8,7 @@ val tapirVersion = "1.13.2"
 val pureConfigVersion = "0.17.10"
 
 val library = Seq(
+  "com.auth0" % "java-jwt" % "4.5.1",
   "org.postgresql" % "postgresql" % "42.7.8",
   "com.typesafe" % "config" % "1.4.6",
   "com.github.pureconfig" %% "pureconfig-core" % pureConfigVersion,
@@ -34,6 +35,7 @@ val library = Seq(
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersVersion % Test,
   "org.testcontainers" % "postgresql" % "1.21.3" % Test,
   "org.slf4j" % "slf4j-simple" % "2.0.17" % Test,
+  "com.outr" %% "scalapass" % "1.3.0",
 )
 
 val scalaRules = Seq(
@@ -54,7 +56,7 @@ lazy val root = (project in file("."))
     Test / parallelExecution := true,
   )
 
-lazy val `it-tests` = (project in file("it"))
+lazy val `it` = (project in file("it"))
   .settings(
     name := "integration-tests",
     scalacOptions ++= scalaRules,
@@ -63,4 +65,4 @@ lazy val `it-tests` = (project in file("it"))
   )
   .dependsOn(root % "test->test")
 
-addCommandAlias("testAll", ";test;it-tests/test")
+addCommandAlias("testAll", ";test;it/test")
