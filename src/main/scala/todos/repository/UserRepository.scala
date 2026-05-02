@@ -20,7 +20,7 @@ class PostgresUserRepository(xa: Transactor[Task]) extends UserRepository {
 
   override def getByUserId(userId: UUID): Task[Option[UserData]] =
     sql"""
-					SELECT user_id, login, email, phone
+					SELECT user_id, login, email, phone, password_hash
 					FROM users WHERE user_id = $userId
 	"""
       .query[UserData]
@@ -29,7 +29,7 @@ class PostgresUserRepository(xa: Transactor[Task]) extends UserRepository {
 
   override def getByLogin(login: String): Task[Option[UserData]] =
     sql"""
-            SELECT user_id, login, email, phone
+            SELECT user_id, login, email, phone, password_hash
             FROM users WHERE login = $login
         """
       .query[UserData]
@@ -41,11 +41,13 @@ class PostgresUserRepository(xa: Transactor[Task]) extends UserRepository {
 					INSERT INTO users(
 					user_id,
 					login,
+                    password_hash,
 	                email,
                     phone
 					) VALUES (
 					${user.userId},
 	                ${user.login},
+                    ${user.passwordHash},
 	                ${user.email},
                     ${user.phone}
 					) ON CONFLICT (login) DO NOTHING
