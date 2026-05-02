@@ -65,7 +65,7 @@ case class CreateTodoRequest(
   )
 }
 
-case class RegisterRequest(
+case class CreateUserRequest(
     login: String,
     email: String,
     phone: String,
@@ -73,9 +73,14 @@ case class RegisterRequest(
 ) derives JsonDecoder,
       JsonEncoder
 
+case class LoginRequest(
+    login: String,
+    password: String,
+) derives JsonDecoder,
+      JsonEncoder
+
 case class JwtResponse(
     token: String,
     user: UserResponse,
-    expiresAt: Long,
 ) derives JsonDecoder,
       JsonEncoder

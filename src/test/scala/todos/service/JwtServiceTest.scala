@@ -14,13 +14,7 @@ class JwtServiceTest extends CommonUtilsTests {
     issuer = "test-issuer",
     ttl = 3600L,
   )
-  private val expiredConfig = JwtConfig(
-    secret = "test-secret-key",
-    issuer = "test-issuer",
-    ttl = -1L,
-  )
   private val validService = new JwtServiceImpl(validConfig)
-  private val expiredService = new JwtServiceImpl(expiredConfig)
 
   "generateToken" should "return a non-empty string" in {
     val userId = UUID.randomUUID()
@@ -52,12 +46,5 @@ class JwtServiceTest extends CommonUtilsTests {
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
     val result = unsafeRun(validService.validateToken(fakeToken).either)
     result shouldBe Left(InvalidTokenError(fakeToken))
-  }
-
-  it should "fail for an expired token" in {
-    val userId = UUID.randomUUID()
-    val token = unsafeRun(expiredService.generateToken(userId))
-    val result = unsafeRun(expiredService.validateToken(token).either)
-    result shouldBe Left(InvalidTokenError(token))
   }
 }

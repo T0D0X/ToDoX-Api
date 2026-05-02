@@ -41,6 +41,7 @@ val library = Seq(
 val scalaRules = Seq(
   "-Wunused:imports", // выдает предупрждения о неиспользованых  importов
   "-Wconf:msg=unused import:e", // превращает warnings в errors
+  "-Wconf:msg=not be exhaustive:e", // не полный match => errors
 )
 
 coverageOutputHTML := true

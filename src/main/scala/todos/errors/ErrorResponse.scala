@@ -1,6 +1,6 @@
 package todos.errors
 
-import todos.errors.AppErrors.JwtTokenErrorBase
+import todos.errors.AppErrors
 import zio.json.{JsonDecoder, JsonEncoder}
 
 import java.time.Instant
@@ -32,9 +32,9 @@ object ErrorResponse {
           code = n.code,
           message = n.getMessage,
         )
-      case j: JwtTokenErrorBase =>
+      case j: AppErrors.AuthErrorBase =>
         ErrorResponse(
-          error = "JwtTokenError",
+          error = "AuthError",
           code = j.code,
           message = j.getMessage,
         )
