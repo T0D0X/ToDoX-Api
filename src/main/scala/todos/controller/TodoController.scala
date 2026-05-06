@@ -1,5 +1,7 @@
 package todos.controller
 
+import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
 import sttp.tapir.endpoint
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
@@ -11,9 +13,9 @@ import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
 import todos.service.{JwtService, TodoService}
 import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
 import zio.{ZIO, ZLayer}
+import zio.*
 
 import java.util.UUID
-import java.time.Instant
 
 class TodoController(todoService: TodoService, jwtService: JwtService) {
 
@@ -95,7 +97,7 @@ class TodoController(todoService: TodoService, jwtService: JwtService) {
     deleteTodoEndpoint,
     createTodoEndpoint,
     getByUserIdTodoEndpoint,
-  )
+  ).asInstanceOf[List[ZServerEndpoint[Any, ZioStreams & WebSockets]]]
 }
 
 object TodoController {

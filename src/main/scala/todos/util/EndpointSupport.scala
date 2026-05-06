@@ -29,10 +29,13 @@ object EndpointSupport {
       .description("Ошибка авторизации")
       .example(ErrorResponse("Unauthorized", "AUTH", "Невалидный или отсутствующий токен", Instant.now()))
 
+  val defaultErrorOutput: EndpointOutput[ErrorResponse] =
+    statusCode(StatusCode.BadRequest).and(jsonBody[ErrorResponse])
+
   /** Преобразует любое исключение в стандартизированный ErrorResponse */
   def toErrorResponse(throwable: Throwable): ErrorResponse = throwable match {
     case error: AppError => ErrorResponse.fromAppError(error)
-    case ex: Throwable => ErrorResponse("InternalError", "DB", ex.getMessage)
+    case ex: Throwable => ErrorResponse("InternalError", "UNKNOWN", ex.getMessage)
   }
 
   /** Стандартный набор ошибок для большинства эндпоинтов */
@@ -50,5 +53,6 @@ object EndpointSupport {
       oneOfVariantValueMatcher(StatusCode.Unauthorized, unauthorizedOutput) { case ErrorResponse(_, code, _, _) =>
         code.startsWith("AUTH")
       },
+      oneOfDefaultVariant(defaultErrorOutput),
     )
 }

@@ -2,6 +2,7 @@ package todos.errors
 
 import todos.errors.AppErrors
 import zio.json.{JsonDecoder, JsonEncoder}
+import zio.schema.{derived, Schema}
 
 import java.time.Instant
 
@@ -13,7 +14,8 @@ case class ErrorResponse(
     message: String,
     timestamp: Instant = Instant.now(),
 ) derives JsonDecoder,
-      JsonEncoder
+      JsonEncoder,
+      Schema
 
 object ErrorResponse {
 

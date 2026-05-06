@@ -70,8 +70,7 @@ object TodoApp extends ZIOAppDefault {
     _ <- ZIO.logInfo(s"Starting server on port $port")
 
     apiEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] =
-      (todoController.allEndpoints ++ authController.allEndpoints)
-        .asInstanceOf[List[ZServerEndpoint[Any, ZioStreams & WebSockets]]]
+      todoController.allEndpoints ++ authController.allEndpoints
 
     swaggerEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] = SwaggerInterpreter()
       .fromServerEndpoints(apiEndpoints, "Todo API", "1.0")
