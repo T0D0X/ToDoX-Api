@@ -1,6 +1,7 @@
 package todos.models
 
 import zio.json.{JsonDecoder, JsonEncoder}
+import zio.schema.{derived, Schema}
 
 import java.util.UUID
 
@@ -26,4 +27,5 @@ case class UserResponse(
     email: String,
     phone: String,
 ) derives JsonDecoder,
-      JsonEncoder
+      JsonEncoder,
+      Schema

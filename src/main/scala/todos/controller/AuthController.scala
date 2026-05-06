@@ -14,8 +14,6 @@ import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
 import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserResponse}
 import zio.{ZIO, ZLayer}
 
-import java.time.Instant
-
 class AuthController(authService: AuthService, authConfig: AuthConfig) {
 
   private val baseEndpoint = endpoint
@@ -25,9 +23,10 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
     .errorOut(standardErrorOut)
     .zServerSecurityLogic {
       case Some(token) if token == authConfig.authToken => ZIO.succeed(())
-      case _ => ZIO.fail(ErrorResponse("Forbidden", "AUTH", "Invalid admin token", Instant.now()))
+      case _ => ZIO.fail(ErrorResponse("Forbidden", "AUTH", "Invalid admin token"))
     }
 
+  // POST api/v1/users/register
   val createEndpoint = baseEndpoint.post
     .in("register")
     .in(jsonBody[CreateUserRequest])
@@ -37,6 +36,7 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
       authService.register(request).mapError(toErrorResponse)
     }
 
+  // POST api/v1/users/login
   val loginEndpoint = baseEndpoint.post
     .in("login")
     .in(jsonBody[LoginRequest])

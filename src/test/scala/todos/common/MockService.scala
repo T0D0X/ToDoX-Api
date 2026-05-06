@@ -3,11 +3,20 @@ package todos.common
 import todos.errors.AppErrors.*
 
 import java.util.UUID
-import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
-import todos.service.{JwtService, TodoService}
+import todos.models.{
+  CreateTodoRequest,
+  CreateUserRequest,
+  JwtResponse,
+  LoginRequest,
+  TodoItem,
+  UpdateTodoRequest,
+  UserResponse,
+}
+import todos.service.{AuthService, JwtService, TodoService}
 import zio.{IO, Task, ZIO}
 
 object MockService {
+  val tokenTest = "token-test"
 
   def mockTodoService(
       getResult: Task[Option[TodoItem]] = ZIO.none,
@@ -23,17 +32,30 @@ object MockService {
     override def getByUserId(userId: UUID): Task[List[TodoItem]] = getByUserIdResult
   }
 
-  def mockJwtSrevice(
-      token: String,
+  def mockJwtService(
       uuidReturn: Option[UUID] = None,
-      errorsReturn: Option[AuthErrorBase] = None,
   ): JwtService = new JwtService {
-    override def generateToken(userId: UUID): Task[String] = ZIO.succeed(token)
+    override def generateToken(userId: UUID): Task[String] = ZIO.succeed(tokenTest)
     override def validateToken(token: String): IO[AuthErrorBase, UUID] =
-      (uuidReturn, errorsReturn) match {
-        case (Some(uuid), _) => ZIO.succeed(uuid)
-        case (_, Some(error)) => ZIO.fail(error)
-        case _ => ZIO.fail(InvalidTokenError("What test?!"))
+      ZIO.ifZIO(ZIO.succeed(token == tokenTest && uuidReturn.isDefined))(
+        onTrue = ZIO.succeed(uuidReturn.get),
+        onFalse = ZIO.fail(InvalidTokenError(token)),
+      )
+  }
+
+  def mockAuthService(userResponse: UserResponse): AuthService = new AuthService {
+    override def register(request: CreateUserRequest): Task[UserResponse] =
+      ZIO.cond(
+        request.login != "incorrect",
+        userResponse,
+        UserAlreadyExistsError(request.login),
+      )
+
+    override def login(request: LoginRequest): Task[JwtResponse] =
+      request match {
+        case LoginRequest(login, _) if login == "incorrect" => ZIO.fail(UserNotFoundError(login))
+        case LoginRequest(_, password) if password == "invalid" => ZIO.fail(PasswordError(password))
+        case _ => ZIO.succeed(JwtResponse(tokenTest, userResponse))
       }
   }
 }

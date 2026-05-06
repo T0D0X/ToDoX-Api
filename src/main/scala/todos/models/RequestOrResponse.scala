@@ -1,6 +1,7 @@
 package todos.models
 
 import zio.json.{JsonDecoder, JsonEncoder}
+import zio.schema.{derived, Schema}
 
 import java.time.Instant
 import java.util.UUID
@@ -83,4 +84,5 @@ case class JwtResponse(
     token: String,
     user: UserResponse,
 ) derives JsonDecoder,
-      JsonEncoder
+      JsonEncoder,
+      Schema
