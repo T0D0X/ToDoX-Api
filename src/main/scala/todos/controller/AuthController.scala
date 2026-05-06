@@ -1,5 +1,7 @@
 package todos.controller
 
+import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
 import sttp.tapir.endpoint
 import sttp.tapir.generic.auto.*
 import todos.service.AuthService
@@ -45,6 +47,7 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
     }
 
   val allEndpoints = List(createEndpoint, loginEndpoint)
+    .asInstanceOf[List[ZServerEndpoint[Any, ZioStreams & WebSockets]]]
 }
 
 object AuthController {
