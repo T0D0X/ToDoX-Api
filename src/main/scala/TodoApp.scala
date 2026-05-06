@@ -1,8 +1,11 @@
+import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.controller.{AuthController, TodoController}
 import todos.service.{AuthServiceImpl, JwtServiceImpl, TodoServiceImpl}
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import sttp.tapir.ztapir.ZServerEndpoint
 import todos.config.{AuthConfig, DataBaseConfig, JwtConfig}
 import todos.repository.todoimpl.PostgresTodoRepository
 import todos.repository.userimpl.PostgresUserRepository
@@ -66,13 +69,12 @@ object TodoApp extends ZIOAppDefault {
 
     _ <- ZIO.logInfo(s"Starting server on port $port")
 
-    apiEndpoints = todoController.allEndpoints ++ authController.allEndpoints
-    swaggerEndpoints = SwaggerInterpreter()
-      .fromServerEndpoints[Task](
-        apiEndpoints,
-        "Todo API",
-        "1.0",
-      )
+    apiEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] =
+      (todoController.allEndpoints ++ authController.allEndpoints)
+        .asInstanceOf[List[ZServerEndpoint[Any, ZioStreams & WebSockets]]]
+
+    swaggerEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] = SwaggerInterpreter()
+      .fromServerEndpoints(apiEndpoints, "Todo API", "1.0")
     allEndpoints = apiEndpoints ++ swaggerEndpoints
 
     baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
