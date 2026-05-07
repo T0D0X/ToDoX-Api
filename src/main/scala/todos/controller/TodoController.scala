@@ -80,9 +80,10 @@ class TodoController(todoService: TodoService, jwtService: JwtService) {
         .mapError(toErrorResponse)
     }
 
-  // GET /api/v1/todos/user
+  // GET /api/v1/todos/user/all
   private val getByUserIdTodoEndpoint = baseEndpoint.get
     .in("user")
+    .in("all")
     .out(jsonBody[List[TodoItem]])
     .description("Get all Todos by UserId")
     .serverLogic { userId => _ =>

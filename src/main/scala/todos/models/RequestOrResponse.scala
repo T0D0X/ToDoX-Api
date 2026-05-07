@@ -13,7 +13,8 @@ case class UpdateTodoRequest(
     completeAt: Option[Instant],
     tags: Option[List[String]],
 ) derives JsonDecoder,
-      JsonEncoder
+      JsonEncoder,
+      Schema
 
 object UpdateTodoRequest {
   def empty = UpdateTodoRequest(None, None, None, None, None)
@@ -53,7 +54,8 @@ case class CreateTodoRequest(
     completeAt: Option[Instant],
     tags: List[String],
 ) derives JsonDecoder,
-      JsonEncoder {
+      JsonEncoder,
+      Schema {
   def toToDoItem = TodoItem(
     userId = userId,
     id = UUID.randomUUID(),

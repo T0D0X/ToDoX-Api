@@ -11,7 +11,7 @@ trait CommonJsonTests extends AnyFlatSpec with Matchers {
       json: String,
       obj: A,
   )(implicit decoder: JsonDecoder[A]): Unit =
-    it should s"${obj.getClass} : $desc" in {
+    it should s"${obj.getClass.getSimpleName} : $desc" in {
       json.fromJson[A] shouldBe Right(obj)
     }
 
