@@ -1,22 +1,22 @@
 package todos.service
 
 import todos.errors.AppErrors.*
-import todos.models.{UserData, UserIdOrLogin}
-import todos.repository.UserRepository
-import zio.{Task, ZIO}
+import todos.models.{UserData, UserIdOrLogin, UserResponse}
+import todos.repository.userimpl.UserRepository
+import zio.{Task, ZIO, ZLayer}
 
 trait UserService {
-  def get(request: UserIdOrLogin): Task[Option[UserData]]
+  def get(request: UserIdOrLogin): Task[Option[UserResponse]]
   def create(user: UserData): Task[Boolean]
   def delete(request: UserIdOrLogin): Task[Unit]
 }
 
 class UserServiceImpl(userRepository: UserRepository) extends UserService {
 
-  override def get(request: UserIdOrLogin): Task[Option[UserData]] =
+  override def get(request: UserIdOrLogin): Task[Option[UserResponse]] =
     (request.userId, request.login) match {
-      case (Some(userId), _) => userRepository.getByUserId(userId)
-      case (_, Some(login)) => userRepository.getByLogin(login)
+      case (Some(userId), _) => userRepository.getByUserId(userId).map(_.map(_.toResponse))
+      case (_, Some(login)) => userRepository.getByLogin(login).map(_.map(_.toResponse))
       case _ => ZIO.fail(RequestNotFoundError(""))
     }
 
@@ -29,4 +29,8 @@ class UserServiceImpl(userRepository: UserRepository) extends UserService {
       case (_, Some(login)) => userRepository.deleteByLogin(login)
       case _ => ZIO.fail(RequestNotFoundError(""))
     }
+}
+
+object UserServiceImpl {
+  val live = ZLayer.fromFunction(new UserServiceImpl(_))
 }

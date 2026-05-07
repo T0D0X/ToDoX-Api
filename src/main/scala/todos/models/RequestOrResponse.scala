@@ -1,6 +1,7 @@
 package todos.models
 
 import zio.json.{JsonDecoder, JsonEncoder}
+import zio.schema.{derived, Schema}
 
 import java.time.Instant
 import java.util.UUID
@@ -12,7 +13,8 @@ case class UpdateTodoRequest(
     completeAt: Option[Instant],
     tags: Option[List[String]],
 ) derives JsonDecoder,
-      JsonEncoder
+      JsonEncoder,
+      Schema
 
 object UpdateTodoRequest {
   def empty = UpdateTodoRequest(None, None, None, None, None)
@@ -27,6 +29,12 @@ case class UserIdOrLogin(
 object UserIdOrLogin {
   def empty = UserIdOrLogin(None, None)
 }
+
+case class UserIdOrLoginRequest(
+    userId: Option[UUID],
+    login: Option[String],
+) derives JsonDecoder,
+      JsonEncoder
 
 case class UpdateUserDataRequest(
     userId: Option[UUID],
@@ -46,7 +54,8 @@ case class CreateTodoRequest(
     completeAt: Option[Instant],
     tags: List[String],
 ) derives JsonDecoder,
-      JsonEncoder {
+      JsonEncoder,
+      Schema {
   def toToDoItem = TodoItem(
     userId = userId,
     id = UUID.randomUUID(),
@@ -58,3 +67,24 @@ case class CreateTodoRequest(
     tags = tags,
   )
 }
+
+case class CreateUserRequest(
+    login: String,
+    email: String,
+    phone: String,
+    password: String,
+) derives JsonDecoder,
+      JsonEncoder
+
+case class LoginRequest(
+    login: String,
+    password: String,
+) derives JsonDecoder,
+      JsonEncoder
+
+case class JwtResponse(
+    token: String,
+    user: UserResponse,
+) derives JsonDecoder,
+      JsonEncoder,
+      Schema

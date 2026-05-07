@@ -80,3 +80,7 @@ class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
       .transact(xa)
       .unit
 }
+
+object PostgresTodoRepository {
+  val live = ZLayer.fromFunction(new PostgresTodoRepository(_))
+}

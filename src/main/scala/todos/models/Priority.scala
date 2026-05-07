@@ -2,6 +2,7 @@ package todos.models
 
 import doobie.Meta
 import zio.json.*
+import zio.schema.Schema
 
 sealed trait Priority
 
@@ -25,6 +26,14 @@ object Priority {
       case Low => "low"
       case Medium => "medium"
       case High => "high"
+    },
+  )
+  implicit val schema: Schema[Priority] = Schema[String].transformOrFail(
+    str => Right(fromString(str)),
+    {
+      case Low => Right("low")
+      case Medium => Right("medium")
+      case High => Right("high")
     },
   )
 

@@ -1,6 +1,6 @@
-package todos.utils
+package todos.common
 
-import todos.models.{CreateTodoRequest, Priority, TodoItem, UserData}
+import todos.models.{CreateTodoRequest, CreateUserRequest, Priority, TodoItem, UserData}
 import zio.*
 import zio.test.Gen
 
@@ -59,7 +59,16 @@ object ToDoGenerators {
       login <- genString
       email <- genString
       phone <- genString
-    } yield UserData(userId, login, email, phone)
+      password <- genString
+    } yield UserData(userId, login, email, phone, password)
+
+  implicit val genCreateUserRequest: Gen[Any, CreateUserRequest] =
+    for {
+      login <- genString
+      email <- genString
+      phone <- genString
+      password <- genString
+    } yield CreateUserRequest(login, email, phone, password)
 
   def generate[A](implicit gen: Gen[Any, A]): UIO[A] =
     gen.sample.map(_.value).runCollect.map(_.head)

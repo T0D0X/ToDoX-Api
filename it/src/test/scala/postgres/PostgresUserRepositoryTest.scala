@@ -4,8 +4,8 @@ import doobie.*
 import doobie.implicits.*
 import todos.config.DataBaseConfig
 import todos.models.UserData
-import todos.repository.{PostgresUserRepository, UserRepository}
-import todos.utils.ToDoGenerators.*
+import todos.common.ToDoGenerators.*
+import todos.repository.userimpl.{PostgresUserRepository, UserRepository}
 import zio.*
 import zio.interop.catz.*
 import zio.test.*
@@ -17,7 +17,7 @@ object PostgresUserRepositoryTest extends ZIOSpecDefault {
   val transactorLayer: ZLayer[Any, Throwable, UserRepository] =
     ZLayer.scoped {
       for {
-        xa <- DataBaseConfig.usersL
+        xa <- DataBaseConfig.lZio
         _ <- ZIO.addFinalizer(cleanDatabase(xa).orDie)
       } yield new PostgresUserRepository(xa)
     }

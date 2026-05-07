@@ -1,8 +1,8 @@
 package todos.service
 
 import todos.errors.AppErrors.*
-import todos.utils.ToDoGenerators.*
-import todos.utils.CommonUtilsTests
+import todos.common.ToDoGenerators.*
+import todos.common.CommonUtilsTests
 import todos.models.{CreateTodoRequest, Priority, TodoItem, UpdateTodoRequest}
 import todos.repository.todoimpl.TodoRepository
 import zio.ZIO

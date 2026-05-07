@@ -32,4 +32,26 @@ object AppErrors {
   // ============ DATABASE ERRORS ============
   sealed trait DatabaseErrorBase extends AppError
 
+  sealed trait AuthErrorBase extends AppError
+
+  case class InvalidTokenError(token: String) extends AuthErrorBase {
+    override def message: String = s"invalid token $token"
+    override def code: String = "AUTH_ERROR_0"
+  }
+
+  case class UserAlreadyExistsError(login: String) extends AuthErrorBase {
+    override def code: String = "AUTH_ERROR_1"
+    override def message: String = s"User with $login already exists"
+  }
+
+  case class UserNotFoundError(login: String) extends AuthErrorBase {
+    override def code: String = "AUTH_ERROR_2"
+    override def message: String = s"User with $login not found"
+  }
+
+  case class PasswordError(password: String) extends AuthErrorBase {
+    override def code: String = "AUTH_ERROR_3"
+    override def message: String = s"$password incorrect"
+  }
+
 }

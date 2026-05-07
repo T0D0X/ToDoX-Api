@@ -5,7 +5,7 @@ import doobie.implicits.*
 import todos.config.DataBaseConfig
 import todos.models.*
 import todos.repository.todoimpl.{PostgresTodoRepository, TodoRepository}
-import todos.utils.ToDoGenerators.*
+import todos.common.ToDoGenerators.*
 import zio.*
 import zio.interop.catz.*
 import zio.test.*
@@ -19,7 +19,7 @@ object PostgresTodoRepositoryTest extends ZIOSpecDefault {
   val transactorLayer: ZLayer[Any, Throwable, TodoRepository] =
     ZLayer.scoped {
       for {
-        xa <- DataBaseConfig.todoL
+        xa <- DataBaseConfig.lZio
         _ <- ZIO.addFinalizer(cleanDatabase(xa).orDie)
       } yield new PostgresTodoRepository(xa)
     }

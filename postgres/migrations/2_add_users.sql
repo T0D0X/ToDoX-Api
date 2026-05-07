@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
     user_id UUID NOT NULL,
     login VARCHAR(50) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
     email VARCHAR(100) NOT NULL,
     phone VARCHAR(100) NOT NULL
 );

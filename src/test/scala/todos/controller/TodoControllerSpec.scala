@@ -4,17 +4,20 @@ import zio.*
 import zio.test.*
 import zio.http.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.errors.AppErrors.*
+import todos.errors.ErrorResponse
 import todos.models.*
-import todos.service.TodoService
+import todos.common.{MockService, TestRequests}
+import todos.errors.AppErrors.{EmptyFieldError, TodoNotFoundError}
+import todos.service.{JwtService, TodoService}
+import zio.json.*
 
 import java.time.Instant
 import java.util.UUID
 
 object TodoControllerSpec extends ZIOSpecDefault {
 
-  protected val testId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
-  protected val testTodo = TodoItem(
+  private val testId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val testTodo = TodoItem(
     userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
     id = testId,
     description = Some("Test description"),
@@ -24,94 +27,145 @@ object TodoControllerSpec extends ZIOSpecDefault {
     completeAt = Some(Instant.now()),
     tags = List.empty,
   )
+  private val createTodoRequest = CreateTodoRequest(
+    userId = testTodo.userId,
+    description = testTodo.description,
+    priority = testTodo.priority,
+    completeAt = testTodo.completeAt,
+    tags = testTodo.tags,
+  )
+
+  private val updateTodoRequest = UpdateTodoRequest(
+    description = Some("Update text"),
+    priority = Some(Priority.Medium),
+    isComplete = Some(true),
+    completeAt = None,
+    tags = None,
+  )
+
+  val tokenValid = "token-test"
+  val tokenInvalid = "incorrect"
 
   def spec = suite("TodoControllerSpec")(
     suite("GET /api/v1/todos/get/{id}")(
       test("return  200 and todo found") {
-        val app = createApp(mockService(getResult = ZIO.some(testTodo)))
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/${testId.toString}"),
+        val app = makeApp(
+          MockService.mockTodoService(getResult = ZIO.some(testTodo)),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.get(s"api/v1/todos/${testTodo.userId.toString}", tokenValid)
 
         for {
           response <- app(request)
-          body <- response.body.asString
+          body <- response.body.asJson[TodoItem]
         } yield assertTrue(
           response.status == Status.Ok,
-          body.contains(testId.toString),
+          body == testTodo,
         )
       },
       test("return 404 todo not found") {
-        val app = createApp(mockService(getResult = ZIO.none))
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/${testId.toString}"),
+        val app = makeApp(
+          MockService.mockTodoService(getResult = ZIO.none),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.get(s"api/v1/todos/${testTodo.userId.toString}", tokenValid)
 
         for {
           response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
           response.status == Status.NotFound,
+          body.error == "NotFoundError",
+          body.code == "NOT_FOUND_001",
+          body.message == s"Todo with id ${testTodo.userId} not found",
         )
       },
       test("return 400 no validate userId") {
-        val app = createApp(mockService())
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/unknown"),
+        val app = makeApp(
+          MockService.mockTodoService(),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.get("api/v1/todos/unknown", tokenValid)
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
         } yield assertTrue(
           response.status == Status.BadRequest,
         )
       },
-      test("return 500 database failed") {
-        val app = createApp(mockService(getResult = ZIO.fail(new RuntimeException("Database connection failed"))))
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/get/${testId.toString}"),
+      test("return 400 no validate authToken") {
+        val app = makeApp(
+          MockService.mockTodoService(getResult = ZIO.some(testTodo)),
+          MockService.mockJwtService(),
         )
+        val request = TestRequests.get(s"api/v1/todos/${testTodo.userId.toString}", tokenInvalid)
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
-          response.status == Status.InternalServerError,
-          body.isDefined,
-          body.exists(_.contains("DatabaseError")),
+          response.status == Status.Unauthorized,
+          body.error == "AuthError",
+          body.code == "AUTH_ERROR_0",
+          body.message == s"invalid token $tokenInvalid",
+        )
+      },
+      test("return 500 database failed") {
+        val app = makeApp(
+          MockService.mockTodoService(getResult = ZIO.fail(new RuntimeException("Database connection failed"))),
+          MockService.mockJwtService(Some(testTodo.userId)),
+        )
+        val request = TestRequests.get(s"api/v1/todos/${testTodo.userId.toString}", tokenValid)
+
+        for {
+          response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
+        } yield assertTrue(
+          response.status == Status.BadRequest,
+          body.error == "InternalError",
+          body.code == "UNKNOWN",
+          body.message == "Database connection failed",
+        )
+      },
+      test("return 401") {
+        val app = makeApp(
+          MockService.mockTodoService(),
+          MockService.mockJwtService(),
+        )
+        val request = TestRequests.get(s"api/v1/todos/${testTodo.userId.toString}", tokenInvalid)
+
+        for {
+          response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
+        } yield assertTrue(
+          response.status == Status.Unauthorized,
+          body.error == "AuthError",
+          body.code == "AUTH_ERROR_0",
+          body.message == "invalid token incorrect",
         )
       },
     ),
     suite("POST /api/v1/todos/create")(
       test("return 200 todo create") {
-        val app = createApp(mockService(createResult = ZIO.unit))
-        val request = Request.post(
-          decodeUrl(s"api/v1/todos/create"),
-          Body.fromString(
-            """{
-              |  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              |  "description": "string",
-              |  "priority": "low",
-              |  "completeAt": "2025-12-14T07:22:02.250Z",
-              |  "tags": [
-              |    "string"
-              |  ]
-              |}""".stripMargin,
-          ),
+        val app = makeApp(
+          MockService.mockTodoService(createResult = ZIO.unit),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.post("api/v1/todos/create", createTodoRequest.toJson, tokenValid)
 
         for {
           response <- app(request)
         } yield assertTrue(
           response.status == Status.Ok,
+          response.body.isEmpty,
         )
       },
       test("return 400 JSON no validate") {
-        val app = createApp(mockService())
-        val request = Request.post(
-          decodeUrl(s"api/v1/todos/create"),
-          Body.fromString("""{invalid json}"""),
+        val app = makeApp(
+          MockService.mockTodoService(),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.post("api/v1/todos/create", "{invalid json}", tokenValid)
 
         for {
           response <- app(request)
@@ -120,170 +174,240 @@ object TodoControllerSpec extends ZIOSpecDefault {
         )
       },
       test("return 500 database failed") {
-        val app = createApp(mockService(createResult = ZIO.fail(new RuntimeException("Database connection failed"))))
-        val request = Request.post(
-          decodeUrl(s"api/v1/todos/create"),
-          Body.fromString(
-            """{
-              |  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-              |  "description": "string",
-              |  "priority": "low",
-              |  "completeAt": "2025-12-14T07:22:02.250Z",
-              |  "tags": [
-              |    "string"
-              |  ]
-              |}""".stripMargin,
-          ),
+        val app = makeApp(
+          MockService.mockTodoService(createResult = ZIO.fail(new RuntimeException("Database connection failed"))),
+          MockService.mockJwtService(Some(testTodo.userId)),
+        )
+        val request = TestRequests.post("api/v1/todos/create", createTodoRequest.toJson, tokenValid)
+
+        for {
+          response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
+        } yield assertTrue(
+          response.status == Status.BadRequest,
+          body.error == "InternalError",
+          body.code == "UNKNOWN",
+          body.message == "Database connection failed",
+        )
+      },
+      test("return 401") {
+        val app = makeApp(
+          MockService.mockTodoService(),
+          MockService.mockJwtService(),
+        )
+        val request = TestRequests.post(
+          "api/v1/todos/create",
+          createTodoRequest.toJson,
+          tokenInvalid,
         )
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
-          response.status == Status.InternalServerError,
-          body.isDefined,
-          body.exists(_.contains("DatabaseError")),
+          response.status == Status.Unauthorized,
+          body.error == "AuthError",
+          body.code == "AUTH_ERROR_0",
+          body.message == "invalid token incorrect",
         )
       },
     ),
     suite("PUT /api/v1/todos/update/{id}")(
       test("return 200 validate success") {
-        val app = createApp(mockService(updateResult = ZIO.unit))
-        val request = Request.put(
-          decodeUrl(s"api/v1/todos/update/${testId.toString}"),
-          Body.fromString(
-            """{"title":"Updated","description":"Updated Desc","isDone":true}""",
-          ),
+        val app = makeApp(
+          MockService.mockTodoService(updateResult = ZIO.unit),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request =
+          TestRequests.put(s"api/v1/todos/update/${testTodo.userId.toString}", updateTodoRequest.toJson, tokenValid)
 
         for {
           response <- app(request)
         } yield assertTrue(
           response.status == Status.Ok,
+          response.body.isEmpty,
         )
       },
       test("return validation error") {
-        val app = createApp(mockService(updateResult = ZIO.fail(EmptyFieldError())))
-        val request = Request.put(
-          decodeUrl(s"api/v1/todos/update/${testId.toString}"),
-          Body.fromString("""{}"""),
+        val app = makeApp(
+          MockService.mockTodoService(updateResult = ZIO.fail(EmptyFieldError())),
+          MockService.mockJwtService(Some(testTodo.userId)),
+        )
+        val request = TestRequests.put(
+          s"api/v1/todos/update/${testTodo.userId.toString}",
+          UpdateTodoRequest.empty.toJson,
+          tokenValid,
         )
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
           response.status == Status.UnprocessableEntity,
-          body.exists(_.contains("VALIDATION_001")),
+          body.error == "ValidationError",
+          body.code == "VALIDATION_001",
+          body.message == "At least one field must be provided for update",
         )
       },
       test("return 404 todo not found") {
-        val app = createApp(mockService(updateResult = ZIO.fail(TodoNotFoundError(testId.toString))))
-        val request = Request.put(
-          decodeUrl(s"api/v1/todos/update/${testId.toString}"),
-          Body.fromString("""{"title":"Updated"}"""),
+        val app = makeApp(
+          MockService.mockTodoService(updateResult = ZIO.fail(TodoNotFoundError(testTodo.userId.toString))),
+          MockService.mockJwtService(Some(testTodo.userId)),
+        )
+        val request = TestRequests.put(
+          s"api/v1/todos/update/${testTodo.userId.toString}",
+          updateTodoRequest.toJson,
+          tokenValid,
         )
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
           response.status == Status.NotFound,
-          body.exists(_.contains("NOT_FOUND_001")),
-          body.exists(_.contains(s"Todo with id $testId not found")),
+          body.error == "NotFoundError",
+          body.code == "NOT_FOUND_001",
+          body.message == s"Todo with id ${testTodo.userId} not found",
+        )
+      },
+      test("return 401") {
+        val app = makeApp(
+          MockService.mockTodoService(updateResult = ZIO.unit),
+          MockService.mockJwtService(),
+        )
+        val request = TestRequests.put(
+          s"api/v1/todos/update/${testTodo.userId.toString}",
+          updateTodoRequest.toJson,
+          tokenInvalid,
+        )
+
+        for {
+          response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
+        } yield assertTrue(
+          response.status == Status.Unauthorized,
+          body.error == "AuthError",
+          body.code == "AUTH_ERROR_0",
+          body.message == "invalid token incorrect",
         )
       },
     ),
     suite("DELETE /api/v1/todos/delete/{id}")(
       test("return 200 delete success") {
 
-        val app = createApp(mockService(deleteResult = ZIO.unit))
-        val request = Request.delete(
-          decodeUrl(s"api/v1/todos/delete/${testId.toString}"),
+        val app = makeApp(
+          MockService.mockTodoService(deleteResult = ZIO.unit),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.delete(s"api/v1/todos/delete/${testTodo.userId.toString}", tokenValid)
 
         for {
           response <- app(request)
         } yield assertTrue(
           response.status == Status.Ok,
+          response.body.isEmpty,
         )
       },
       test("return 404 todo not found") {
-        val app = createApp(mockService(deleteResult = ZIO.fail(TodoNotFoundError(testId.toString))))
-        val request = Request.delete(
-          decodeUrl(s"api/v1/todos/delete/${testId.toString}"),
+        val app = makeApp(
+          MockService.mockTodoService(deleteResult = ZIO.fail(TodoNotFoundError(testTodo.userId.toString))),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.delete(s"api/v1/todos/delete/${testTodo.userId.toString}", tokenValid)
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
           response.status == Status.NotFound,
-          body.exists(_.contains("NOT_FOUND_001")),
-          body.exists(_.contains(s"Todo with id $testId not found")),
+          body.error == "NotFoundError",
+          body.code == "NOT_FOUND_001",
+          body.message == s"Todo with id ${testTodo.userId} not found",
+        )
+      },
+      test("return 401") {
+        val app = makeApp(
+          MockService.mockTodoService(deleteResult = ZIO.unit),
+          MockService.mockJwtService(),
+        )
+        val request = TestRequests.delete(s"api/v1/todos/delete/${testTodo.userId.toString}", tokenInvalid)
+
+        for {
+          response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
+        } yield assertTrue(
+          response.status == Status.Unauthorized,
+          body.error == "AuthError",
+          body.code == "AUTH_ERROR_0",
+          body.message == "invalid token incorrect",
         )
       },
     ),
-    suite("GET /api/v1/todos/user/{id}")(
+    suite("GET /api/v1/todos/user/all")(
       test("return 200 success operation") {
-        val app = createApp(mockService(getByUserIdResult = ZIO.succeed(List(testTodo))))
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/user/${testTodo.userId}"),
+        val app = makeApp(
+          MockService.mockTodoService(getByUserIdResult = ZIO.succeed(List(testTodo))),
+          MockService.mockJwtService(Some(testTodo.userId)),
         )
+        val request = TestRequests.get("api/v1/todos/user/all", tokenValid)
 
         for {
           response <- app(request)
+          body <- response.body.asJson[List[TodoItem]]
         } yield assertTrue(
           response.status == Status.Ok,
+          body.size == 1,
+          body.contains(testTodo),
         )
       },
       test("return 500 database failed") {
         val app =
-          createApp(mockService(getByUserIdResult = ZIO.fail(new RuntimeException("Database connection failed"))))
-        val request = Request.get(
-          decodeUrl(s"api/v1/todos/user/${testTodo.userId}"),
-        )
+          makeApp(
+            MockService.mockTodoService(getByUserIdResult =
+              ZIO.fail(new RuntimeException("Database connection failed")),
+            ),
+            MockService.mockJwtService(Some(testTodo.userId)),
+          )
+        val request = TestRequests.get("api/v1/todos/user/all", tokenValid)
 
         for {
           response <- app(request)
-          body <- response.body.asString.option
+          body <- response.body.asJson[ErrorResponse]
         } yield assertTrue(
-          response.status == Status.InternalServerError,
-          body.isDefined,
-          body.exists(_.contains("DatabaseError")),
+          response.status == Status.BadRequest,
+          body.error == "InternalError",
+          body.code == "UNKNOWN",
+          body.message == "Database connection failed",
         )
       },
-      // Todo: после реализации проверки есть ли такой пользователь добавить тест
+      test("return 401") {
+        val app =
+          makeApp(
+            MockService.mockTodoService(getByUserIdResult =
+              ZIO.fail(new RuntimeException("Database connection failed")),
+            ),
+            MockService.mockJwtService(),
+          )
+        val request = TestRequests.get("api/v1/todos/user/all", tokenInvalid)
+
+        for {
+          response <- app(request)
+          body <- response.body.asJson[ErrorResponse]
+        } yield assertTrue(
+          response.status == Status.Unauthorized,
+          body.error == "AuthError",
+          body.code == "AUTH_ERROR_0",
+          body.message == "invalid token incorrect",
+        )
+      },
     ),
   )
 
-  private def mockService(
-      getResult: Task[Option[TodoItem]] = ZIO.none,
-      createResult: Task[Unit] = ZIO.unit,
-      updateResult: Task[Unit] = ZIO.unit,
-      deleteResult: Task[Unit] = ZIO.unit,
-      getByUserIdResult: Task[List[TodoItem]] = ZIO.succeed(List.empty[TodoItem]),
-  ): TodoService = new TodoService {
-    override def get(id: UUID): Task[Option[TodoItem]] = getResult
-
-    override def create(request: CreateTodoRequest): Task[Unit] = createResult
-
-    override def update(id: UUID, request: UpdateTodoRequest): Task[Unit] =
-      updateResult
-
-    override def delete(id: UUID): Task[Unit] = deleteResult
-
-    override def getByUserId(userId: UUID): Task[List[TodoItem]] =
-      getByUserIdResult
-  }
-
-  private def decodeUrl(path: String): URL =
-    URL.decode(path).getOrElse {
-      throw new IllegalArgumentException(s"Invalid URL path: $path")
-    }
-
-  private def createApp(service: TodoService): Routes[Any, Response] = {
-    val controller = TodoController.make(service)
+  private def makeApp(
+      todoService: TodoService,
+      jwtService: JwtService,
+  ): Routes[Any, Response] = {
+    val controller = new TodoController(todoService, jwtService)
     ZioHttpInterpreter().toHttp(controller.allEndpoints)
   }
 }

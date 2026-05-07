@@ -1,6 +1,7 @@
 package todos.models
 
 import zio.json.{JsonDecoder, JsonEncoder}
+import zio.schema.{derived, Schema}
 
 import java.time.Instant
 import java.util.UUID
@@ -15,4 +16,5 @@ case class TodoItem(
     completeAt: Option[Instant],
     tags: List[String],
 ) derives JsonDecoder,
-      JsonEncoder
+      JsonEncoder,
+      Schema

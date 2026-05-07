@@ -1,24 +1,10 @@
 package todos.config
 
-import com.typesafe.config.{Config, ConfigException, ConfigFactory}
+import pureconfig.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class DataBaseConfigSpec extends AnyFlatSpec with Matchers {
-
-  private def validate(config: Config): Either[String, Unit] =
-    try {
-      DataBaseConfig(
-        host = config.getString("host"),
-        port = config.getInt("port"),
-        name = config.getString("name"),
-        user = config.getString("user"),
-        password = config.getString("password"),
-      )
-      Right(())
-    } catch {
-      case e: ConfigException => Left(e.getMessage)
-    }
 
   it should "Success" in {
     val conf =
@@ -32,9 +18,17 @@ class DataBaseConfigSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val config = ConfigFactory.parseString(conf).getConfig("db")
+    val result = ConfigSource.string(conf).at("db").load[DataBaseConfig]
 
-    validate(config) shouldBe Right(())
+    result shouldBe Right(
+      DataBaseConfig(
+        host = "localhost",
+        port = 8080,
+        name = "todo_test",
+        user = "test_user",
+        password = "test_password",
+      ),
+    )
   }
 
   it should "Fail" in {
@@ -42,13 +36,15 @@ class DataBaseConfigSpec extends AnyFlatSpec with Matchers {
       """
         |db {
         | host = "localhost"
-        | port = "8080"
+        | port = 8080
         | user = "test_user"
         | password = "test_password"
         |}
         |""".stripMargin
 
-    val config = ConfigFactory.parseString(conf).getConfig("db")
-    validate(config) shouldBe Left("String: 2: No configuration setting found for key 'name'")
+    val result = ConfigSource.string(conf).at("db").load[DataBaseConfig]
+
+    result.isLeft shouldBe true
+    result.left.toOption.get.toList.map(_.description).mkString should include("name")
   }
 }
