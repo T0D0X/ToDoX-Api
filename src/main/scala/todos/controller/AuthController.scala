@@ -36,6 +36,15 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
       authService.register(request).mapError(toErrorResponse)
     }
 
+  // DELETE api/v1/users/delete
+  val deleteEndPoint = baseEndpoint.delete
+    .in("delete")
+    .in(jsonBody[LoginRequest])
+    .description("Delete user")
+    .serverLogic { _ => request =>
+      authService.delete(request).mapError(toErrorResponse)
+    }
+
   // POST api/v1/users/login
   val loginEndpoint = baseEndpoint.post
     .in("login")
@@ -46,7 +55,7 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
       authService.login(request).mapError(toErrorResponse)
     }
 
-  val allEndpoints = List(createEndpoint, loginEndpoint)
+  val allEndpoints = List(createEndpoint, deleteEndPoint, loginEndpoint)
     .asInstanceOf[List[ZServerEndpoint[Any, ZioStreams & WebSockets]]]
 }
 

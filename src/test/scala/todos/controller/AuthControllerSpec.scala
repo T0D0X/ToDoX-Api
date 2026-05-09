@@ -126,6 +126,59 @@ object AuthControllerSpec extends ZIOSpecDefault {
           )
         },
       ),
+      suite("DELETE api/v1/users/delete")(
+        test("return 200") {
+          val app = makeApp(MockService.mockAuthService(userResponse))
+          val request = TestRequests.delete("api/v1/users/delete", token, Some(loginRequest.toJson))
+          for {
+            response <- app(request)
+          } yield assertTrue(
+            response.status == Status.Ok,
+            response.body.isEmpty,
+          )
+        },
+        test("return 401 because User not found") {
+          val app = makeApp(MockService.mockAuthService(userResponse))
+          val request =
+            TestRequests.delete("api/v1/users/delete", token, Some(loginRequest.copy(login = "incorrect").toJson))
+          for {
+            response <- app(request)
+            body <- response.body.asJson[ErrorResponse]
+          } yield assertTrue(
+            response.status == Status.Unauthorized,
+            body.error == "AuthError",
+            body.code == "AUTH_ERROR_2",
+            body.message == "User with incorrect not found",
+          )
+        },
+        test("return 401 because password invalid") {
+          val app = makeApp(MockService.mockAuthService(userResponse))
+          val request =
+            TestRequests.delete("api/v1/users/delete", token, Some(loginRequest.copy(password = "invalid").toJson))
+          for {
+            response <- app(request)
+            body <- response.body.asJson[ErrorResponse]
+          } yield assertTrue(
+            response.status == Status.Unauthorized,
+            body.error == "AuthError",
+            body.code == "AUTH_ERROR_3",
+            body.message == "invalid incorrect",
+          )
+        },
+        test("return 401 because invalid token") {
+          val app = makeApp(MockService.mockAuthService(userResponse))
+          val request = TestRequests.delete("api/v1/users/delete", "invalid", Some(loginRequest.toJson))
+          for {
+            response <- app(request)
+            body <- response.body.asJson[ErrorResponse]
+          } yield assertTrue(
+            response.status == Status.Unauthorized,
+            body.error == "Forbidden",
+            body.code == "AUTH",
+            body.message == "Invalid admin token",
+          )
+        },
+      ),
     )
 
   private def makeApp(
