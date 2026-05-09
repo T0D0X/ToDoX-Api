@@ -10,6 +10,7 @@ import java.util.UUID
 
 trait AuthService {
   def register(request: CreateUserRequest): Task[UserResponse]
+  def delete(request: LoginRequest): Task[Unit]
   def login(request: LoginRequest): Task[JwtResponse]
 }
 
@@ -42,6 +43,14 @@ class AuthServiceImpl(
     token = token,
     user = user.toResponse,
   )
+
+  override def delete(request: LoginRequest): Task[Unit] = for {
+    userOpt <- userRepo.getByLogin(request.login)
+    user <- ZIO.fromOption(userOpt).orElseFail(UserNotFoundError(request.login))
+    valid <- HashingUtil.verify(request.password, user.passwordHash)
+    _ <- ZIO.when(!valid)(ZIO.fail(PasswordError(request.password)))
+    _ <- userRepo.deleteByLogin(request.login)
+  } yield ()
 }
 
 object AuthServiceImpl {

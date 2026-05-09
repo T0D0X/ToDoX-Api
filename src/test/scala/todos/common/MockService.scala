@@ -35,7 +35,7 @@ object MockService {
   def mockJwtService(
       uuidReturn: Option[UUID] = None,
   ): JwtService = new JwtService {
-    override def generateToken(userId: UUID): Task[String] = ZIO.succeed(tokenTest)
+    override def generateToken(userId: UUID): Task[String] = ???
     override def validateToken(token: String): IO[AuthErrorBase, UUID] =
       ZIO.ifZIO(ZIO.succeed(token == tokenTest && uuidReturn.isDefined))(
         onTrue = ZIO.succeed(uuidReturn.get),
@@ -56,6 +56,13 @@ object MockService {
         case LoginRequest(login, _) if login == "incorrect" => ZIO.fail(UserNotFoundError(login))
         case LoginRequest(_, password) if password == "invalid" => ZIO.fail(PasswordError(password))
         case _ => ZIO.succeed(JwtResponse(tokenTest, userResponse))
+      }
+
+    override def delete(request: LoginRequest): Task[Unit] =
+      request match {
+        case LoginRequest(login, _) if login == "incorrect" => ZIO.fail(UserNotFoundError(login))
+        case LoginRequest(_, password) if password == "invalid" => ZIO.fail(PasswordError(password))
+        case _ => ZIO.unit
       }
   }
 }

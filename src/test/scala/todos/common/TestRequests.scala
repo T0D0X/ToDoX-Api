@@ -10,8 +10,8 @@ object TestRequests {
   def get(path: String, token: String): Request =
     request(Method.GET, path, Body.empty, token)
 
-  def delete(path: String, token: String): Request =
-    request(Method.DELETE, path, Body.empty, token)
+  def delete(path: String, token: String, body: Option[String] = None): Request =
+    request(Method.DELETE, path, body.map(req => Body.fromString(req)).getOrElse(Body.empty), token)
 
   def post(path: String, body: String, token: String): Request =
     request(Method.POST, path, Body.fromString(body), token)
