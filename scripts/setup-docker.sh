@@ -17,18 +17,17 @@ else
   COMPOSE_CMD="docker compose"
 fi
 
-$COMPOSE_CMD up -d
+$COMPOSE_CMD up -d postgres-test
 
-echo
+echo "⏳ Waiting for PostgreSQL..."
+until $COMPOSE_CMD exec -T postgres-test pg_isready -U test_user -d todo_test; do
+  sleep 1
+done
 
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    set -a
-    source "$PROJECT_ROOT/.env"
-    set +a
-else
-    echo "⚠️ Файлы для окружения не найдены"
+
+echo "Start migration"
+if ! $COMPOSE_CMD run --rm postgres-migration; then
+  echo "Migration failed, exiting"
+  exit 1
 fi
-
-bash "$SCRIPT_DIR/run-migration.sh"
-
-echo "✅ Docker setup completed successfully!"
+echo "Finish migration"
