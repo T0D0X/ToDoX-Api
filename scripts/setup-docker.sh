@@ -19,6 +19,15 @@ fi
 
 $COMPOSE_CMD up -d postgres-test
 
+echo "⏳ Waiting for PostgreSQL..."
+until $COMPOSE_CMD exec -T postgres-test pg_isready -U test_user -d todo_test; do
+  sleep 1
+done
+
+
 echo "Start migration"
-$COMPOSE_CMD up -d postgres-migration
+if ! $COMPOSE_CMD run --rm postgres-migration; then
+  echo "Migration failed, exiting"
+  exit 1
+fi
 echo "Finish migration"
