@@ -65,7 +65,7 @@ object TodoApp extends ZIOAppDefault {
   )
 
   override def run: ZIO[Any, Throwable, Unit] = (for {
-    port <- System.env("PORT").map(_.flatMap(_.toIntOption).getOrElse(9090))
+    port <- System.env("HTTP_PORT").map(_.flatMap(_.toIntOption).getOrElse(8080))
     todoController <- ZIO.service[TodoController]
     authController <- ZIO.service[AuthController]
     migration <- ZIO.service[MigrationService]
