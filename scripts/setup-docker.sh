@@ -17,18 +17,8 @@ else
   COMPOSE_CMD="docker compose"
 fi
 
-$COMPOSE_CMD up -d
+$COMPOSE_CMD up -d postgres-test
 
-echo
-
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    set -a
-    source "$PROJECT_ROOT/.env"
-    set +a
-else
-    echo "⚠️ Файлы для окружения не найдены"
-fi
-
-bash "$SCRIPT_DIR/run-migration.sh"
-
-echo "✅ Docker setup completed successfully!"
+echo "Start migration"
+$COMPOSE_CMD up -d postgres-migration
+echo "Finish migration"

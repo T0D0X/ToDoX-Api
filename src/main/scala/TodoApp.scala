@@ -2,7 +2,7 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import todos.controller.{AuthController, TodoController}
-import todos.service.{AuthServiceImpl, JwtServiceImpl, TodoServiceImpl}
+import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoServiceImpl}
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.ztapir.ZServerEndpoint
@@ -13,7 +13,7 @@ import zio.*
 import zio.http.Server
 
 object TodoApp extends ZIOAppDefault {
-  type AppEnv = TodoController & AuthController
+  type AppEnv = TodoController & AuthController & MigrationService
 
   val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
     def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
@@ -48,6 +48,7 @@ object TodoApp extends ZIOAppDefault {
   val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
     // configs
     DataBaseConfig.live,
+    DataBaseConfig.configLive,
     JwtConfig.live,
     AuthConfig.live,
     // repositories
@@ -57,6 +58,7 @@ object TodoApp extends ZIOAppDefault {
     AuthServiceImpl.live,
     JwtServiceImpl.live,
     TodoServiceImpl.live,
+    MigrationService.live,
     // controllers
     AuthController.live,
     TodoController.live,
@@ -66,8 +68,10 @@ object TodoApp extends ZIOAppDefault {
     port <- System.env("PORT").map(_.flatMap(_.toIntOption).getOrElse(9090))
     todoController <- ZIO.service[TodoController]
     authController <- ZIO.service[AuthController]
+    migration <- ZIO.service[MigrationService]
 
     _ <- ZIO.logInfo(s"Starting server on port $port")
+    _ <- migration.migrate
 
     apiEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] =
       todoController.allEndpoints ++ authController.allEndpoints

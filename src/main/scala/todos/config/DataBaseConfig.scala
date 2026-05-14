@@ -1,10 +1,11 @@
 package todos.config
-import doobie.Transactor
+import doobie.{ExecutionContexts, Transactor}
+import org.postgresql.ds.PGSimpleDataSource
 import pureconfig.*
 import zio.interop.catz.asyncInstance
 import zio.{Task, ZIO, ZLayer}
 
-import java.util.Properties
+import javax.sql.DataSource
 
 case class DataBaseConfig(
     user: String,
@@ -12,25 +13,27 @@ case class DataBaseConfig(
     host: String,
     name: String,
     port: Int,
-) derives ConfigReader
+    migrationEnable: Boolean,
+) derives ConfigReader {
+  def url: String = s"jdbc:postgresql://$host:$port/$name"
+  def dataSource: DataSource = {
+    val ds = new PGSimpleDataSource()
+    ds.setURL(url)
+    ds.setUser(user)
+    ds.setPassword(password)
+    ds
+  }
+  def transactor: Transactor[Task] =
+    Transactor.fromDataSource[Task](dataSource, ExecutionContexts.synchronous)
+}
 
 object DataBaseConfig {
 
-  private def mkTransactor(cfg: DataBaseConfig): Transactor[Task] = {
-    val url = s"jdbc:postgresql://${cfg.host}:${cfg.port}/${cfg.name}"
-    val props = new Properties()
-    props.setProperty("user", cfg.user)
-    props.setProperty("password", cfg.password)
-    Transactor.fromDriverManager[Task](
-      driver = "org.postgresql.Driver",
-      url = url,
-      props,
-      logHandler = None,
-    )
-  }
+  val config: Task[DataBaseConfig] = ZIO.attempt(ConfigSource.default.at(s"db").loadOrThrow[DataBaseConfig])
 
-  val lZio: ZIO[Any, Throwable, Transactor[Task]] =
-    ZIO.attempt(ConfigSource.default.at(s"db").loadOrThrow[DataBaseConfig]).map(mkTransactor)
+  val lZio: ZIO[Any, Throwable, Transactor[Task]] = config.map(_.transactor)
+
+  val configLive: ZLayer[Any, Throwable, DataBaseConfig] = ZLayer.fromZIO(config)
 
   val live: ZLayer[Any, Throwable, Transactor[Task]] = ZLayer.fromZIO(lZio)
 }

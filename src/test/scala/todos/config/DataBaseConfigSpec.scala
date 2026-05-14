@@ -15,6 +15,7 @@ class DataBaseConfigSpec extends AnyFlatSpec with Matchers {
         | name = "todo_test"
         | user = "test_user"
         | password = "test_password"
+        | migration-enable = true
         |}
         |""".stripMargin
 
@@ -27,6 +28,7 @@ class DataBaseConfigSpec extends AnyFlatSpec with Matchers {
         name = "todo_test",
         user = "test_user",
         password = "test_password",
+        migrationEnable = true,
       ),
     )
   }
