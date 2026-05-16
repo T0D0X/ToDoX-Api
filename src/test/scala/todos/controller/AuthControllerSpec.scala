@@ -1,7 +1,8 @@
 package todos.controller
 
+import pureconfig.ConfigSource
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.config.AuthConfig
+import todos.config.{AuthConfig, ValidationConfig}
 import todos.service.AuthService
 import todos.common.{MockService, TestRequests}
 import todos.errors.ErrorResponse
@@ -17,13 +18,13 @@ object AuthControllerSpec extends ZIOSpecDefault {
     userId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
     login = "login",
     email = "string@gmail.com",
-    phone = "+799999999",
+    phone = "+71234567890",
   )
   private val createUserRequest = CreateUserRequest(
     login = userResponse.login,
     email = userResponse.email,
     phone = userResponse.phone,
-    password = "password",
+    password = "SuperPassword123!",
   )
   private val loginRequest = LoginRequest(
     createUserRequest.login,
@@ -101,7 +102,8 @@ object AuthControllerSpec extends ZIOSpecDefault {
         },
         test("return 401 because password invalid") {
           val app = makeApp(MockService.mockAuthService(userResponse))
-          val request = TestRequests.post("api/v1/users/login", loginRequest.copy(password = "invalid").toJson, token)
+          val request =
+            TestRequests.post("api/v1/users/login", loginRequest.copy(password = "SuperPassword122!").toJson, token)
           for {
             response <- app(request)
             body <- response.body.asJson[ErrorResponse]
@@ -109,7 +111,7 @@ object AuthControllerSpec extends ZIOSpecDefault {
             response.status == Status.Unauthorized,
             body.error == "AuthError",
             body.code == "AUTH_ERROR_3",
-            body.message == "invalid incorrect",
+            body.message == "SuperPassword122! incorrect",
           )
         },
         test("return 401 because invalid token") {
@@ -154,7 +156,11 @@ object AuthControllerSpec extends ZIOSpecDefault {
         test("return 401 because password invalid") {
           val app = makeApp(MockService.mockAuthService(userResponse))
           val request =
-            TestRequests.delete("api/v1/users/delete", token, Some(loginRequest.copy(password = "invalid").toJson))
+            TestRequests.delete(
+              "api/v1/users/delete",
+              token,
+              Some(loginRequest.copy(password = "SuperPassword122!").toJson),
+            )
           for {
             response <- app(request)
             body <- response.body.asJson[ErrorResponse]
@@ -162,7 +168,7 @@ object AuthControllerSpec extends ZIOSpecDefault {
             response.status == Status.Unauthorized,
             body.error == "AuthError",
             body.code == "AUTH_ERROR_3",
-            body.message == "invalid incorrect",
+            body.message == "SuperPassword122! incorrect",
           )
         },
         test("return 401 because invalid token") {
@@ -181,11 +187,10 @@ object AuthControllerSpec extends ZIOSpecDefault {
       ),
     )
 
-  private def makeApp(
-      authService: AuthService,
-      authConfig: AuthConfig = AuthConfig("token"),
-  ): Routes[Any, Response] = {
-    val controller = new AuthController(authService, authConfig)
+  private def makeApp(authService: AuthService): Routes[Any, Response] = {
+    val authConfig = ConfigSource.default.at("auth").loadOrThrow[AuthConfig]
+    val validationConfig = ConfigSource.default.at("validation").loadOrThrow[ValidationConfig]
+    val controller = new AuthController(authService, authConfig, validationConfig)
     ZioHttpInterpreter().toHttp(controller.allEndpoints)
   }
 }

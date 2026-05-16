@@ -54,14 +54,14 @@ object MockService {
     override def login(request: LoginRequest): Task[JwtResponse] =
       request match {
         case LoginRequest(login, _) if login == "incorrect" => ZIO.fail(UserNotFoundError(login))
-        case LoginRequest(_, password) if password == "invalid" => ZIO.fail(PasswordError(password))
+        case LoginRequest(_, password) if password != "SuperPassword123!" => ZIO.fail(PasswordError(password))
         case _ => ZIO.succeed(JwtResponse(tokenTest, userResponse))
       }
 
     override def delete(request: LoginRequest): Task[Unit] =
       request match {
         case LoginRequest(login, _) if login == "incorrect" => ZIO.fail(UserNotFoundError(login))
-        case LoginRequest(_, password) if password == "invalid" => ZIO.fail(PasswordError(password))
+        case LoginRequest(_, password) if password != "SuperPassword123!" => ZIO.fail(PasswordError(password))
         case _ => ZIO.unit
       }
   }
