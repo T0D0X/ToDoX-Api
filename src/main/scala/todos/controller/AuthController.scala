@@ -2,19 +2,23 @@ package todos.controller
 
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
-import sttp.tapir.endpoint
+import sttp.tapir.{endpoint, ValidationError, ValidationResult, Validator}
 import sttp.tapir.generic.auto.*
 import todos.service.AuthService
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.ztapir.*
-import todos.config.AuthConfig
+import todos.config.{AuthConfig, ValidationConfig}
 import todos.errors.ErrorResponse
 import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
 import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserResponse}
 import zio.{ZIO, ZLayer}
 
-class AuthController(authService: AuthService, authConfig: AuthConfig) {
+class AuthController(
+    authService: AuthService,
+    authConfig: AuthConfig,
+    validationConfig: ValidationConfig,
+) {
 
   private val baseEndpoint = endpoint
     .tag("auth")
@@ -29,7 +33,25 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
   // POST api/v1/users/register
   val createEndpoint = baseEndpoint.post
     .in("register")
-    .in(jsonBody[CreateUserRequest])
+    .in(
+      jsonBody[CreateUserRequest].validate(Validator.custom { req =>
+        val errors = List(
+          validationConfig.validateEmail(req.email),
+          validationConfig.validatePhone(req.phone),
+          validationConfig.validatePassword(req.password),
+        ).collect { case ValidationResult.Invalid(msgs) => msgs }.flatten
+        if (errors.isEmpty) ValidationResult.Valid
+        else ValidationResult.Invalid(errors)
+      }),
+    )
+    .mapErrorOut { (error: ErrorResponse | List[ValidationError[?]]) =>
+      error match {
+        case err: ErrorResponse => err
+        case validationErrors: List[ValidationError[?]] =>
+          val messages = validationErrors.flatMap(_.customMessage).mkString(", ")
+          ErrorResponse("Validation failed", "VALIDATION", messages)
+      }
+    }(error => error)
     .out(jsonBody[UserResponse])
     .description("Create User")
     .serverLogic { _ => request =>
@@ -39,7 +61,7 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
   // DELETE api/v1/users/delete
   val deleteEndPoint = baseEndpoint.delete
     .in("delete")
-    .in(jsonBody[LoginRequest])
+    .in(jsonBody[LoginRequest].validate(Validator.custom(req => validationConfig.validatePassword(req.password))))
     .description("Delete user")
     .serverLogic { _ => request =>
       authService.delete(request).mapError(toErrorResponse)
@@ -48,7 +70,7 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
   // POST api/v1/users/login
   val loginEndpoint = baseEndpoint.post
     .in("login")
-    .in(jsonBody[LoginRequest])
+    .in(jsonBody[LoginRequest].validate(Validator.custom(req => validationConfig.validatePassword(req.password))))
     .out(jsonBody[JwtResponse])
     .description("Login User")
     .serverLogic { _ => request =>
@@ -60,5 +82,5 @@ class AuthController(authService: AuthService, authConfig: AuthConfig) {
 }
 
 object AuthController {
-  val live = ZLayer.fromFunction(new AuthController(_, _))
+  val live = ZLayer.fromFunction(new AuthController(_, _, _))
 }

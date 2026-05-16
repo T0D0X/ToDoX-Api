@@ -6,7 +6,7 @@ import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoSer
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.ztapir.ZServerEndpoint
-import todos.config.{AuthConfig, DataBaseConfig, JwtConfig}
+import todos.config.{AuthConfig, DataBaseConfig, JwtConfig, ValidationConfig}
 import todos.repository.todoimpl.PostgresTodoRepository
 import todos.repository.userimpl.PostgresUserRepository
 import zio.*
@@ -47,6 +47,7 @@ object TodoApp extends ZIOAppDefault {
 
   val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
     // configs
+    ValidationConfig.live,
     DataBaseConfig.live,
     DataBaseConfig.configLive,
     JwtConfig.live,
