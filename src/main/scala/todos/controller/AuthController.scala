@@ -2,7 +2,7 @@ package todos.controller
 
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
-import sttp.tapir.{endpoint, ValidationError, ValidationResult, Validator}
+import sttp.tapir.{endpoint, ValidationResult, Validator}
 import sttp.tapir.generic.auto.*
 import todos.service.AuthService
 import sttp.tapir.json.zio.jsonBody
