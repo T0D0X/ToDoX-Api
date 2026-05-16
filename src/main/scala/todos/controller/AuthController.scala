@@ -44,14 +44,6 @@ class AuthController(
         else ValidationResult.Invalid(errors)
       }),
     )
-    .mapErrorOut { (error: ErrorResponse | List[ValidationError[?]]) =>
-      error match {
-        case err: ErrorResponse => err
-        case validationErrors: List[ValidationError[?]] =>
-          val messages = validationErrors.flatMap(_.customMessage).mkString(", ")
-          ErrorResponse("Validation failed", "VALIDATION", messages)
-      }
-    }(error => error)
     .out(jsonBody[UserResponse])
     .description("Create User")
     .serverLogic { _ => request =>
