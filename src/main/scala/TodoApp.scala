@@ -12,11 +12,13 @@ import todos.repository.userimpl.PostgresUserRepository
 import zio.*
 import zio.http.Server
 import zio.metrics.Metric
+import zio.metrics.jvm.{DefaultJvmMetrics, GarbageCollector, MemoryAllocation, MemoryPools, Thread, VersionInfo}
 import zio.metrics.connectors.MetricsConfig
 import zio.metrics.connectors.prometheus.{prometheusLayer, PrometheusPublisher}
 
 object TodoApp extends ZIOAppDefault {
-  type AppEnv = TodoController & AuthController & MigrationService & MetricsController
+  type AppEnv = TodoController & AuthController & MigrationService & MetricsController & GarbageCollector &
+    MemoryAllocation & MemoryPools & Thread & VersionInfo
 
   val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
     def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
@@ -63,6 +65,7 @@ object TodoApp extends ZIOAppDefault {
     // infra
     ZLayer.succeed(MetricsConfig(10.seconds)),
     ZLayer.fromZIO(PrometheusPublisher.make),
+    DefaultJvmMetrics.liveV2,
     prometheusLayer,
     // configs
     ValidationConfig.live,
@@ -86,9 +89,18 @@ object TodoApp extends ZIOAppDefault {
 
   override def run: ZIO[Any, Throwable, Unit] = (for {
     port <- System.env("HTTP_PORT").map(_.flatMap(_.toIntOption).getOrElse(8080))
+    // controllers
     todoController <- ZIO.service[TodoController]
     authController <- ZIO.service[AuthController]
-    metrcis <- ZIO.service[MetricsController]
+    metrics <- ZIO.service[MetricsController]
+
+    // metrics
+    _ <- ZIO.service[GarbageCollector] <&>
+      ZIO.service[MemoryAllocation] <&>
+      ZIO.service[MemoryPools] <&>
+      ZIO.service[Thread] <&>
+      ZIO.service[VersionInfo]
+
     migration <- ZIO.service[MigrationService]
 
     _ <- ZIO.logInfo(s"Starting server on port $port")
@@ -99,7 +111,7 @@ object TodoApp extends ZIOAppDefault {
 
     swaggerEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] = SwaggerInterpreter()
       .fromServerEndpoints(apiEndpoints, "Todo API", "1.0")
-    allEndpoints = apiEndpoints ++ swaggerEndpoints ++ metrcis.allEndpoints
+    allEndpoints = apiEndpoints ++ swaggerEndpoints ++ metrics.allEndpoints
 
     baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 
