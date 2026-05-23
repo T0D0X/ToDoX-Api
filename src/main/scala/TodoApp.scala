@@ -12,6 +12,7 @@ import todos.repository.userimpl.PostgresUserRepository
 import zio.*
 import zio.http.Server
 import zio.metrics.Metric
+import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.metrics.jvm.{DefaultJvmMetrics, GarbageCollector, MemoryAllocation, MemoryPools, Thread, VersionInfo}
 import zio.metrics.connectors.MetricsConfig
 import zio.metrics.connectors.prometheus.{prometheusLayer, PrometheusPublisher}
@@ -38,7 +39,11 @@ object TodoApp extends ZIOAppDefault {
               .tagged("path", path)
 
             val durationHistogram = Metric
-              .gauge("http_request_duration_seconds", "HTTP request duration")
+              .histogram(
+                "http_request_duration",
+                "HTTP request duration in ms",
+                Boundaries(Chunk(5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0)),
+              )
               .tagged("method", method)
               .tagged("path", path)
 

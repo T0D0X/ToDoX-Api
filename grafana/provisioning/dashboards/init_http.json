@@ -5,8 +5,8 @@
     "name": "ad88c27",
     "namespace": "default",
     "uid": "65281f8f-aa01-4d5d-80b7-716b36e5c715",
-    "resourceVersion": "1779536875433984",
-    "generation": 3,
+    "resourceVersion": "1779538915826015",
+    "generation": 5,
     "creationTimestamp": "2026-05-23T10:49:12Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "4496739214917632"
@@ -18,11 +18,11 @@
       "grafana.app/managerAllowsEdits": "true",
       "grafana.app/managerId": "default",
       "grafana.app/saved-from-ui": "Grafana v13.0.1+security-01 (9bbe672d)",
-      "grafana.app/sourceChecksum": "ac1fe2c0e6e698819a81899acb47f2ac",
+      "grafana.app/sourceChecksum": "590bb7bbab89acd6cfd8f015d2d57004",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/init_http.json",
-      "grafana.app/sourceTimestamp": "1779527541000",
+      "grafana.app/sourceTimestamp": "1779536918000",
       "grafana.app/updatedBy": "user:cfmx7obhjxo8wc",
-      "grafana.app/updatedTimestamp": "2026-05-23T11:47:55Z"
+      "grafana.app/updatedTimestamp": "2026-05-23T12:21:55Z"
     }
   },
   "spec": {
@@ -194,7 +194,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "http_request_duration_seconds",
+                        "expr": "histogram_quantile($percentile, sum(rate(http_request_duration_bucket[1m])) by (le, method, path))",
                         "instant": false,
                         "legendFormat": "{{method}} {{path}}",
                         "range": true
@@ -349,7 +349,28 @@
       "fiscalYearStartMonth": 0
     },
     "title": "HTTP dashboards",
-    "variables": [],
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "percentile",
+          "query": "0.50, 0.90, 0.99 ",
+          "current": {
+            "text": "0.50",
+            "value": "0.50"
+          },
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "label": "percentile",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "description": "Перцентиль",
+          "allowCustomValue": true,
+          "valuesFormat": "csv"
+        }
+      }
+    ],
     "preferences": {
       "layout": {
         "kind": "GridLayout",
