@@ -30,8 +30,11 @@
 - Java 11+
 - sbt (только для разработки)
 
-[Swagger ToDoX-Api](https://todox-api-c8r2.onrender.com/docs/#/)
-
+```
+localhost:8080/docs/# - swagger
+locahost:3000/ - grafana
+locahost:9090/ - prometheus
+```
 ### Запуск контейнера
 Здесь находится окружение для интеграционных тестов в дальнейшем сделаем для локального запуска приложения
 
@@ -62,6 +65,14 @@ case class TodoItem(
   priority: Priority, // low/medium/high
   createdAt: LocalDateTime,
   tags: List[String]
+)
+
+case class UserData(
+    userId: UUID,
+    login: String,
+    email: String,
+    phone: String,
+    passwordHash: String,
 )
 ```
 

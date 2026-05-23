@@ -1,7 +1,7 @@
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.controller.{AuthController, TodoController}
+import todos.controller.{AuthController, MetricsController, TodoController}
 import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoServiceImpl}
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
@@ -11,9 +11,12 @@ import todos.repository.todoimpl.PostgresTodoRepository
 import todos.repository.userimpl.PostgresUserRepository
 import zio.*
 import zio.http.Server
+import zio.metrics.Metric
+import zio.metrics.connectors.MetricsConfig
+import zio.metrics.connectors.prometheus.{prometheusLayer, PrometheusPublisher}
 
 object TodoApp extends ZIOAppDefault {
-  type AppEnv = TodoController & AuthController & MigrationService
+  type AppEnv = TodoController & AuthController & MigrationService & MetricsController
 
   val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
     def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
@@ -27,15 +30,26 @@ object TodoApp extends ZIOAppDefault {
               LogAnnotation("method", method),
               LogAnnotation("path", path),
             )
+            val requestCounter = Metric
+              .counter("http_requests_total", "Total HTTP requests")
+              .tagged("method", method)
+              .tagged("path", path)
+
+            val durationHistogram = Metric
+              .gauge("http_request_duration_seconds", "HTTP request duration")
+              .tagged("method", method)
+              .tagged("path", path)
 
             for {
               start <- Clock.nanoTime
+              _ <- requestCounter.increment
               _ <- ZIO.logAnnotate(logAnnotations) {
                 ZIO.logInfo(s"$method $path")
               }
               response <- h(request)
               end <- Clock.nanoTime
               duration = (end - start) / 1_000_000.0
+              _ <- durationHistogram.update(duration)
               _ <- ZIO.logAnnotate(logAnnotations) {
                 ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
               }
@@ -46,6 +60,10 @@ object TodoApp extends ZIOAppDefault {
   }
 
   val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
+    // infra
+    ZLayer.succeed(MetricsConfig(10.seconds)),
+    ZLayer.fromZIO(PrometheusPublisher.make),
+    prometheusLayer,
     // configs
     ValidationConfig.live,
     DataBaseConfig.live,
@@ -63,12 +81,14 @@ object TodoApp extends ZIOAppDefault {
     // controllers
     AuthController.live,
     TodoController.live,
+    MetricsController.live,
   )
 
   override def run: ZIO[Any, Throwable, Unit] = (for {
     port <- System.env("HTTP_PORT").map(_.flatMap(_.toIntOption).getOrElse(8080))
     todoController <- ZIO.service[TodoController]
     authController <- ZIO.service[AuthController]
+    metrcis <- ZIO.service[MetricsController]
     migration <- ZIO.service[MigrationService]
 
     _ <- ZIO.logInfo(s"Starting server on port $port")
@@ -79,7 +99,7 @@ object TodoApp extends ZIOAppDefault {
 
     swaggerEndpoints: List[ZServerEndpoint[Any, ZioStreams & WebSockets]] = SwaggerInterpreter()
       .fromServerEndpoints(apiEndpoints, "Todo API", "1.0")
-    allEndpoints = apiEndpoints ++ swaggerEndpoints
+    allEndpoints = apiEndpoints ++ swaggerEndpoints ++ metrcis.allEndpoints
 
     baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 

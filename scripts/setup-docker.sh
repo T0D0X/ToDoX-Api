@@ -17,7 +17,7 @@ else
   COMPOSE_CMD="docker compose"
 fi
 
-$COMPOSE_CMD up -d postgres-test
+$COMPOSE_CMD up -d postgres-test prometheus grafana
 
 echo "⏳ Waiting for PostgreSQL..."
 until $COMPOSE_CMD exec -T postgres-test pg_isready -U test_user -d todo_test; do
