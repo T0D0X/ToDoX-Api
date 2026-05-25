@@ -33,10 +33,6 @@ object TodoApp extends ZIOAppDefault {
               LogAnnotation("method", method),
               LogAnnotation("path", path),
             )
-            val requestCounter = Metric
-              .counter("http_requests_total", "Total HTTP requests")
-              .tagged("method", method)
-              .tagged("path", path)
 
             val durationHistogram = Metric
               .histogram(
@@ -49,13 +45,18 @@ object TodoApp extends ZIOAppDefault {
 
             for {
               start <- Clock.nanoTime
-              _ <- requestCounter.increment
               _ <- ZIO.logAnnotate(logAnnotations) {
                 ZIO.logInfo(s"$method $path")
               }
               response <- h(request)
               end <- Clock.nanoTime
               duration = (end - start) / 1_000_000.0
+              _ <- Metric
+                .counter("http_requests_total", "Total HTTP requests")
+                .tagged("method", method)
+                .tagged("path", path)
+                .tagged("code", response.status.code.toString)
+                .increment
               _ <- durationHistogram.update(duration)
               _ <- ZIO.logAnnotate(logAnnotations) {
                 ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
