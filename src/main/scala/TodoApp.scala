@@ -1,3 +1,12 @@
+import io.micrometer.core.instrument.binder.jvm.{
+  ClassLoaderMetrics,
+  JvmGcMetrics,
+  JvmInfoMetrics,
+  JvmMemoryMetrics,
+  JvmThreadMetrics,
+}
+import io.micrometer.core.instrument.{Counter, Timer}
+import io.micrometer.prometheusmetrics.{PrometheusConfig, PrometheusMeterRegistry}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
@@ -11,23 +20,36 @@ import todos.repository.todoimpl.PostgresTodoRepository
 import todos.repository.userimpl.PostgresUserRepository
 import zio.*
 import zio.http.Server
-import zio.metrics.Metric
-import zio.metrics.MetricKeyType.Histogram.Boundaries
-import zio.metrics.jvm.{DefaultJvmMetrics, GarbageCollector, MemoryAllocation, MemoryPools, Thread, VersionInfo}
-import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.{prometheusLayer, PrometheusPublisher}
 
 object TodoApp extends ZIOAppDefault {
-  type AppEnv = TodoController & AuthController & MigrationService & MetricsController & GarbageCollector &
-    MemoryAllocation & MemoryPools & Thread & VersionInfo
+  type AppEnv = TodoController & AuthController & MigrationService & MetricsController & PrometheusMeterRegistry
 
-  val loggingMiddleware: Middleware[Any] = new Middleware[Any] {
-    def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
-      routes.transform[Env1] { h =>
-        Handler.scoped[Env1] {
-          handler { (request: Request) =>
-            val method = request.method.toString()
-            val path = request.url.path.toString
+  private val prometheusMeterRegistryLayer: ZLayer[Any, Nothing, PrometheusMeterRegistry] = ZLayer.succeed {
+    val registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    // Регистрируем JVM-метрики
+    new ClassLoaderMetrics().bindTo(registry)
+    new JvmMemoryMetrics().bindTo(registry)
+    new JvmGcMetrics().bindTo(registry)
+    new JvmThreadMetrics().bindTo(registry)
+    new JvmInfoMetrics().bindTo(registry)
+    registry
+  }
+
+  def loggingMiddleware(registry: PrometheusMeterRegistry): Middleware[Any] = {
+    val timer = Timer
+      .builder("http_request_duration")
+      .description("HTTP request duration")
+    val counter = Counter
+      .builder("http_requests_total")
+      .description("Total HTTP requests")
+
+    new Middleware[Any] {
+      def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
+        routes.transform[Env1] { h =>
+          Handler.scoped[Env1] {
+            handler { (request: Request) =>
+              val method = request.method.toString()
+              val path = request.url.path.toString
 
             val logAnnotations = Set(
               LogAnnotation("method", method),
@@ -68,11 +90,8 @@ object TodoApp extends ZIOAppDefault {
   }
 
   val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
-    // infra
-    ZLayer.succeed(MetricsConfig(10.seconds)),
-    ZLayer.fromZIO(PrometheusPublisher.make),
-    DefaultJvmMetrics.liveV2,
-    prometheusLayer,
+    // prometheus
+    prometheusMeterRegistryLayer,
     // configs
     ValidationConfig.live,
     DataBaseConfig.live,
@@ -101,11 +120,7 @@ object TodoApp extends ZIOAppDefault {
     metrics <- ZIO.service[MetricsController]
 
     // metrics
-    _ <- ZIO.service[GarbageCollector] <&>
-      ZIO.service[MemoryAllocation] <&>
-      ZIO.service[MemoryPools] <&>
-      ZIO.service[Thread] <&>
-      ZIO.service[VersionInfo]
+    registry <- ZIO.service[PrometheusMeterRegistry]
 
     migration <- ZIO.service[MigrationService]
 
@@ -121,7 +136,7 @@ object TodoApp extends ZIOAppDefault {
 
     baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 
-    finalApp = baseApp @@ loggingMiddleware
+    finalApp = baseApp @@ loggingMiddleware(registry)
 
     _ <- Server
       .serve(finalApp)
