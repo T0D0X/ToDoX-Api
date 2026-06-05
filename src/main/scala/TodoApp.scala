@@ -15,7 +15,9 @@ import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoSer
 import zio.http.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.ztapir.ZServerEndpoint
-import todos.config.{AuthConfig, DataBaseConfig, JwtConfig, ValidationConfig}
+import todos.config.{AuthConfig, DataBaseConfig, JwtConfig, RedisConfig, ValidationConfig}
+import todos.models.UserData
+import todos.redis.{RedisCache, RedisConnection}
 import todos.repository.todoimpl.PostgresTodoRepository
 import todos.repository.userimpl.PostgresUserRepository
 import zio.*
@@ -51,42 +53,41 @@ object TodoApp extends ZIOAppDefault {
               val method = request.method.toString()
               val path = request.url.path.toString
 
-            val logAnnotations = Set(
-              LogAnnotation("method", method),
-              LogAnnotation("path", path),
-            )
-
-            val durationHistogram = Metric
-              .histogram(
-                "http_request_duration",
-                "HTTP request duration in ms",
-                Boundaries(Chunk(5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0)),
+              val logAnnotations = Set(
+                LogAnnotation("method", method),
+                LogAnnotation("path", path),
               )
-              .tagged("method", method)
-              .tagged("path", path)
 
-            for {
-              start <- Clock.nanoTime
-              _ <- ZIO.logAnnotate(logAnnotations) {
-                ZIO.logInfo(s"$method $path")
-              }
-              response <- h(request)
-              end <- Clock.nanoTime
-              duration = (end - start) / 1_000_000.0
-              _ <- Metric
-                .counter("http_requests_total", "Total HTTP requests")
-                .tagged("method", method)
-                .tagged("path", path)
-                .tagged("code", response.status.code.toString)
-                .increment
-              _ <- durationHistogram.update(duration)
-              _ <- ZIO.logAnnotate(logAnnotations) {
-                ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
-              }
-            } yield response
+              for {
+                start <- Clock.nanoTime
+                _ <- ZIO.logAnnotate(logAnnotations) {
+                  ZIO.logInfo(s"$method $path")
+                }
+                response <- h(request)
+                end <- Clock.nanoTime
+                duration = (end - start) / 1_000_000.0
+                _ <- ZIO.succeed {
+                  counter
+                    .tag("method", method)
+                    .tag("path", path)
+                    .tag("code", response.status.code.toString)
+                    .register(registry)
+                    .increment()
+
+                  timer
+                    .tag("method", method)
+                    .tag("path", path)
+                    .register(registry)
+                    .record(duration.toLong, java.util.concurrent.TimeUnit.MILLISECONDS)
+                }
+                _ <- ZIO.logAnnotate(logAnnotations) {
+                  ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
+                }
+              } yield response
+            }
           }
         }
-      }
+    }
   }
 
   val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
@@ -98,6 +99,10 @@ object TodoApp extends ZIOAppDefault {
     DataBaseConfig.configLive,
     JwtConfig.live,
     AuthConfig.live,
+    RedisConfig.live,
+    // cache
+    RedisConnection.live,
+    RedisCache.live[String, UserData]("users"),
     // repositories
     PostgresTodoRepository.live,
     PostgresUserRepository.live,

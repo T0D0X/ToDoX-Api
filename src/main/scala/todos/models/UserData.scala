@@ -2,6 +2,7 @@ package todos.models
 
 import zio.json.{JsonDecoder, JsonEncoder}
 import zio.schema.{derived, Schema}
+import io.circe.{Decoder, Encoder}
 
 import java.util.UUID
 
@@ -11,7 +12,8 @@ case class UserData(
     email: String,
     phone: String,
     passwordHash: String,
-) {
+) derives Decoder,
+      Encoder {
   def toResponse: UserResponse =
     UserResponse(
       userId = userId,
