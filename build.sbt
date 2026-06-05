@@ -7,6 +7,7 @@ val testContainersVersion = "0.43.6"
 val tapirVersion = "1.13.2"
 val pureConfigVersion = "0.17.10"
 val zioMetrics = "2.5.5"
+val micrometerVersion = "1.16.5"
 
 val library = Seq(
   "com.auth0" % "java-jwt" % "4.5.1",
@@ -19,8 +20,6 @@ val library = Seq(
   "dev.zio" %% "zio-http" % "3.7.0",
   "dev.zio" %% "zio-json" % "0.7.45",
   "dev.zio" %% "zio-interop-cats" % "23.1.0.5",
-  "dev.zio" %% "zio-metrics-connectors" % zioMetrics,
-  "dev.zio" %% "zio-metrics-connectors-prometheus" % zioMetrics,
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % tapirVersion,
@@ -39,6 +38,9 @@ val library = Seq(
   "org.testcontainers" % "postgresql" % "1.21.3" % Test,
   "org.slf4j" % "slf4j-simple" % "2.0.17" % Test,
   "com.outr" %% "scalapass" % "1.3.0",
+  "io.lettuce" % "lettuce-core" % "7.6.0.RELEASE",
+  "io.micrometer" % "micrometer-core" % micrometerVersion,
+  "io.micrometer" % "micrometer-registry-prometheus" % micrometerVersion,
 )
 
 val scalaRules = Seq(
