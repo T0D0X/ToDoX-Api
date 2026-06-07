@@ -5,13 +5,15 @@ import todos.repository.userimpl.UserRepository
 import todos.common.ToDoGenerators.*
 import todos.errors.AppErrors.{PasswordError, UserAlreadyExistsError, UserNotFoundError}
 import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserData}
+import todos.redis.RedisCache
 import todos.util.HashingUtil
 import zio.ZIO
 
 class AuthServiceTest extends CommonUtilsTests {
 
   "register" should "Success" in new Testing {
-    userRepo.createUser.expects(*).returns(ZIO.succeed(true)).once()
+    userRepoPostgres.createUser.expects(*).returns(ZIO.succeed(true)).once()
+    redisMock.set.expects(*, *, *).returns(ZIO.unit).once()
     val result = unsafeRun(service.register(createUserRequest).exit)
 
     result.isSuccess shouldBe true
@@ -22,36 +24,54 @@ class AuthServiceTest extends CommonUtilsTests {
     }
   }
   it should "User already exists" in new Testing {
-    userRepo.createUser.expects(*).returns(ZIO.succeed(false)).once()
+    userRepoPostgres.createUser.expects(*).returns(ZIO.succeed(false)).once()
     checkFailure(service.register(createUserRequest))(UserAlreadyExistsError(createUserRequest.login))
 
   }
 
   "login" should "Success" in new Testing {
-    userRepo.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.none).once()
+    userRepoPostgres.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
+    redisMock.set.expects(*, *, *).returns(ZIO.unit).once()
+    jwtService.generateToken.expects(user.userId).returns(ZIO.succeed(token))
+    checkSuccess(service.login(loginRequest))(JwtResponse(token, user.toResponse))
+  }
+  "login" should "Success find in cache" in new Testing {
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.some(user)).once()
     jwtService.generateToken.expects(user.userId).returns(ZIO.succeed(token))
     checkSuccess(service.login(loginRequest))(JwtResponse(token, user.toResponse))
   }
   it should "User not found" in new Testing {
-    userRepo.getByLogin.expects(createUserRequest.login).returns(ZIO.none).once()
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.none).once()
+    userRepoPostgres.getByLogin.expects(createUserRequest.login).returns(ZIO.none).once()
     checkFailure(service.login(loginRequest))(UserNotFoundError(createUserRequest.login))
   }
   it should "Invalid password" in new Testing {
-    userRepo.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.some(user)).once()
     checkFailure(service.login(loginRequest.copy(password = "incorrect")))(PasswordError("incorrect"))
   }
 
   "delete" should "Success" in new Testing {
-    userRepo.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
-    userRepo.deleteByLogin.expects(createUserRequest.login).returns(ZIO.unit).once()
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.none).once()
+    userRepoPostgres.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
+    redisMock.set.expects(*, *, *).returns(ZIO.unit).once()
+    userRepoPostgres.deleteByLogin.expects(createUserRequest.login).returns(ZIO.unit).once()
+    redisMock.del.expects(*).returns(ZIO.unit).once()
+    checkSuccess(service.delete(loginRequest))(())
+  }
+  "delete" should "Success find in cache" in new Testing {
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.some(user)).once()
+    userRepoPostgres.deleteByLogin.expects(createUserRequest.login).returns(ZIO.unit).once()
+    redisMock.del.expects(*).returns(ZIO.unit).once()
     checkSuccess(service.delete(loginRequest))(())
   }
   it should "User not found" in new Testing {
-    userRepo.getByLogin.expects(createUserRequest.login).returns(ZIO.none).once()
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.none).once()
+    userRepoPostgres.getByLogin.expects(createUserRequest.login).returns(ZIO.none).once()
     checkFailure(service.delete(loginRequest))(UserNotFoundError(createUserRequest.login))
   }
   it should "Invalid password" in new Testing {
-    userRepo.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
+    redisMock.get.expects(createUserRequest.login).returns(ZIO.some(user)).once()
     checkFailure(service.delete(loginRequest.copy(password = "incorrect")))(PasswordError("incorrect"))
   }
 
@@ -69,9 +89,10 @@ class AuthServiceTest extends CommonUtilsTests {
       login = createUserRequest.login,
       password = createUserRequest.password,
     )
-    val userRepo = mock[UserRepository]
+    val userRepoPostgres = mock[UserRepository]
+    val redisMock = mock[RedisCache[String, UserData]]
     val jwtService = mock[JwtService]
-    val service = new AuthServiceImpl(userRepo, jwtService)
+    val service = new AuthServiceImpl(redisMock, userRepoPostgres, jwtService)
   }
 
 }
