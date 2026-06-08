@@ -4,12 +4,12 @@
   "metadata": {
     "name": "ad88c27",
     "namespace": "default",
-    "uid": "f9e4bc82-6b1d-429c-9aa5-e8cedcc3623c",
-    "resourceVersion": "1780514890317995",
-    "generation": 3,
-    "creationTimestamp": "2026-06-03T18:26:30Z",
+    "uid": "2fbd1a82-8bb6-4ba4-87f2-415d671b4077",
+    "resourceVersion": "1780933799804006",
+    "generation": 2,
+    "creationTimestamp": "2026-06-08T15:43:15Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "4094490698252288"
+      "grafana.app/deprecatedInternalID": "1361747400466432"
     },
     "annotations": {
       "grafana.app/createdBy": "access-policy:service",
@@ -18,11 +18,11 @@
       "grafana.app/managerAllowsEdits": "true",
       "grafana.app/managerId": "default",
       "grafana.app/saved-from-ui": "Grafana v13.0.1+security-01 (9bbe672d)",
-      "grafana.app/sourceChecksum": "e3668af0caa09492e68519e58a752ce0",
+      "grafana.app/sourceChecksum": "4e41358807ad0c9535793ed18b6f8338",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/init_http.json",
-      "grafana.app/sourceTimestamp": "1780418209000",
-      "grafana.app/updatedBy": "user:dfo1mw7l75gxsd",
-      "grafana.app/updatedTimestamp": "2026-06-03T19:28:10Z"
+      "grafana.app/sourceTimestamp": "1780514914000",
+      "grafana.app/updatedBy": "user:bfoj2lxnenqioa",
+      "grafana.app/updatedTimestamp": "2026-06-08T15:49:59Z"
     }
   },
   "spec": {
@@ -783,7 +783,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-5"
+                          "name": "panel-3"
                         }
                       }
                     },
@@ -792,7 +792,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-3"
+                          "name": "panel-5"
                         }
                       }
                     },

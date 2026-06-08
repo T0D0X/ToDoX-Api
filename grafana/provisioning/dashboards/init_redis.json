@@ -4,19 +4,25 @@
   "metadata": {
     "name": "redis-cache-custom",
     "namespace": "default",
-    "uid": "f36f60d8-61b2-41fd-8832-5409a970b0fe",
-    "resourceVersion": "1780514754182987",
-    "generation": 4,
-    "creationTimestamp": "2026-06-03T19:10:49Z",
+    "uid": "40463bad-a7da-4b65-8062-fdecccba896b",
+    "resourceVersion": "1780936279661004",
+    "generation": 2,
+    "creationTimestamp": "2026-06-08T15:43:15Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "4105643111256064"
+      "grafana.app/deprecatedInternalID": "1361747241082880"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:dfo1mw7l75gxsd",
+      "grafana.app/createdBy": "access-policy:service",
       "grafana.app/folder": "",
+      "grafana.app/managedBy": "classic-file-provisioning",
+      "grafana.app/managerAllowsEdits": "true",
+      "grafana.app/managerId": "default",
       "grafana.app/saved-from-ui": "Grafana v13.0.1+security-01 (9bbe672d)",
-      "grafana.app/updatedBy": "user:dfo1mw7l75gxsd",
-      "grafana.app/updatedTimestamp": "2026-06-03T19:25:54Z"
+      "grafana.app/sourceChecksum": "1fa8ec9dfa06ae1212d44ace9e8b58d9",
+      "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/init_redis.json",
+      "grafana.app/sourceTimestamp": "1780514789000",
+      "grafana.app/updatedBy": "user:bfoj2lxnenqioa",
+      "grafana.app/updatedTimestamp": "2026-06-08T16:31:19Z"
     }
   },
   "spec": {
@@ -156,32 +162,7 @@
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "__systemRef": "hideSeriesFrom",
-                    "matcher": {
-                      "id": "byNames",
-                      "options": {
-                        "mode": "exclude",
-                        "names": [
-                          "users:GET"
-                        ],
-                        "prefix": "All except:",
-                        "readOnly": true
-                      }
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": false,
-                          "tooltip": true,
-                          "viz": true
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "overrides": []
               }
             }
           }
@@ -324,8 +305,11 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "",
+                      "group": "prometheus",
                       "version": "v0",
+                      "datasource": {
+                        "name": "PBFA97CFB590B2093"
+                      },
                       "spec": {
                         "editorMode": "code",
                         "expr": "(\n  sum by (namespace, command) (redis_cache_requests_total{status=\"error\"})\n    or\n  sum by (namespace, command) (redis_cache_requests_total) * 0\n)\n  /\nsum by (namespace, command) (redis_cache_requests_total)\n  * 100",
@@ -367,7 +351,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "cps",
+                  "unit": "percentunit",
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
@@ -389,7 +373,7 @@
                     "axisBorderShow": false,
                     "axisCenteredZero": false,
                     "axisColorMode": "text",
-                    "axisLabel": "ops/s",
+                    "axisLabel": "%",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
                     "barWidthFactor": 0.6,
@@ -420,32 +404,7 @@
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "__systemRef": "hideSeriesFrom",
-                    "matcher": {
-                      "id": "byNames",
-                      "options": {
-                        "mode": "exclude",
-                        "names": [
-                          "users:DEL"
-                        ],
-                        "prefix": "All except:",
-                        "readOnly": true
-                      }
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": false,
-                          "tooltip": true,
-                          "viz": true
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "overrides": []
               }
             }
           }
