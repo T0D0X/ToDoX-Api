@@ -1,12 +1,13 @@
 package todos.service
 
 import todos.common.CommonUtilsTests
-import todos.repository.userimpl.UserRepository
 import todos.common.ToDoGenerators.*
 import todos.errors.AppErrors.{PasswordError, UserAlreadyExistsError, UserNotFoundError}
 import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserData}
 import todos.redis.RedisCache
+import todos.repository.userimpl.UserRepository
 import todos.util.HashingUtil
+
 import zio.ZIO
 
 class AuthServiceTest extends CommonUtilsTests {

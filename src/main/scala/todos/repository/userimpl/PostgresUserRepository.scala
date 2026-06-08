@@ -1,13 +1,15 @@
 package todos.repository.userimpl
 
-import doobie.*
-import doobie.implicits.*
-import doobie.postgres.implicits.*
 import todos.models.UserData
+
 import zio.{Task, ZLayer}
 import zio.interop.catz.*
 
 import java.util.UUID
+
+import doobie.*
+import doobie.implicits.*
+import doobie.postgres.implicits.*
 
 class PostgresUserRepository(xa: Transactor[Task]) extends UserRepository {
 

@@ -1,12 +1,12 @@
 package todos.config
 
-import pureconfig.{ConfigReader, ConfigSource}
+import scala.util.matching.Regex
+import scala.util.Try
 import sttp.tapir.ValidationResult
 import sttp.tapir.ValidationResult.{Invalid, Valid}
 import zio.{ZIO, ZLayer}
 
-import scala.util.Try
-import scala.util.matching.Regex
+import pureconfig.{ConfigReader, ConfigSource}
 
 case class ValidationConfig(
     phone: Regex,

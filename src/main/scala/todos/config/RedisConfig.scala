@@ -1,8 +1,9 @@
 package todos.config
 
-import pureconfig.{ConfigReader, ConfigSource}
-import zio.ZLayer
 import scala.concurrent.duration.Duration
+import zio.ZLayer
+
+import pureconfig.{ConfigReader, ConfigSource}
 
 case class RedisConfig(
     uri: String,

@@ -1,10 +1,12 @@
 package todos.redis
 
+import todos.config.RedisConfig
+
+import zio.{Task, ZIO, ZLayer}
+
 import io.lettuce.core.{RedisClient, RedisURI}
 import io.lettuce.core.api.async.RedisAsyncCommands
 import io.lettuce.core.resource.ClientResources
-import todos.config.RedisConfig
-import zio.{Task, ZIO, ZLayer}
 
 class RedisConnection private (
     client: RedisClient,

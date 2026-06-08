@@ -1,10 +1,12 @@
 package todos.util
 
-import sttp.tapir.*
-import sttp.tapir.json.zio.jsonBody
-import sttp.model.StatusCode
-import sttp.tapir.generic.auto.*
 import todos.errors.{AppError, ErrorResponse}
+
+import sttp.model.StatusCode
+import sttp.tapir.*
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.zio.jsonBody
+
 import java.time.Instant
 
 object EndpointSupport {

@@ -1,7 +1,7 @@
 package todos.json
 
-import todos.models.{Priority, TodoItem}
 import todos.common.CommonJsonTests
+import todos.models.{Priority, TodoItem}
 
 import java.time.Instant
 import java.util.UUID

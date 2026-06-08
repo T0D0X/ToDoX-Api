@@ -1,8 +1,9 @@
 package todos.common
 
+import zio.json.*
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import zio.json.*
 
 trait CommonJsonTests extends AnyFlatSpec with Matchers {
 

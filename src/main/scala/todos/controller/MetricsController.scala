@@ -1,11 +1,12 @@
 package todos.controller
 
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
+import sttp.capabilities.WebSockets
 import sttp.tapir.endpoint
 import sttp.tapir.ztapir.*
 import zio.{ZIO, ZLayer}
+
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 
 class MetricsController(registry: PrometheusMeterRegistry) {
   private val metricsEndpoint: ZServerEndpoint[Any, ZioStreams & WebSockets] =

@@ -2,9 +2,10 @@ package todos.models
 
 import zio.json.{JsonDecoder, JsonEncoder}
 import zio.schema.{derived, Schema}
-import io.circe.{Decoder, Encoder}
 
 import java.util.UUID
+
+import io.circe.{Decoder, Encoder}
 
 case class UserData(
     userId: UUID,

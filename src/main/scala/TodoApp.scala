@@ -1,3 +1,21 @@
+import todos.config.{AuthConfig, DataBaseConfig, JwtConfig, RedisConfig, ValidationConfig}
+import todos.controller.{AuthController, MetricsController, TodoController}
+import todos.models.UserData
+import todos.redis.{RedisCache, RedisConnection}
+import todos.repository.todoimpl.PostgresTodoRepository
+import todos.repository.userimpl.PostgresUserRepository
+import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoServiceImpl}
+
+import sttp.capabilities.zio.ZioStreams
+import sttp.capabilities.WebSockets
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import sttp.tapir.ztapir.ZServerEndpoint
+import zio.*
+import zio.http.*
+import zio.http.Server
+
+import io.micrometer.core.instrument.{Counter, Timer}
 import io.micrometer.core.instrument.binder.jvm.{
   ClassLoaderMetrics,
   JvmGcMetrics,
@@ -5,23 +23,7 @@ import io.micrometer.core.instrument.binder.jvm.{
   JvmMemoryMetrics,
   JvmThreadMetrics,
 }
-import io.micrometer.core.instrument.{Counter, Timer}
 import io.micrometer.prometheusmetrics.{PrometheusConfig, PrometheusMeterRegistry}
-import sttp.capabilities.WebSockets
-import sttp.capabilities.zio.ZioStreams
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.controller.{AuthController, MetricsController, TodoController}
-import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoServiceImpl}
-import zio.http.*
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import sttp.tapir.ztapir.ZServerEndpoint
-import todos.config.{AuthConfig, DataBaseConfig, JwtConfig, RedisConfig, ValidationConfig}
-import todos.models.UserData
-import todos.redis.{RedisCache, RedisConnection}
-import todos.repository.todoimpl.PostgresTodoRepository
-import todos.repository.userimpl.PostgresUserRepository
-import zio.*
-import zio.http.Server
 
 object TodoApp extends ZIOAppDefault {
   type AppEnv = TodoController & AuthController & MigrationService & MetricsController & PrometheusMeterRegistry

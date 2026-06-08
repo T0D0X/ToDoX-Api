@@ -1,8 +1,8 @@
 package todos.config
 
-import pureconfig.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pureconfig.*
 
 class JwtConfigSpec extends AnyFlatSpec with Matchers {
   it should "Success" in {

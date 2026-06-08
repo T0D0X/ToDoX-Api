@@ -1,7 +1,8 @@
 package todos.config
 
-import pureconfig.{ConfigReader, ConfigSource}
 import zio.{ZIO, ZLayer}
+
+import pureconfig.{ConfigReader, ConfigSource}
 
 case class JwtConfig(
     secret: String,

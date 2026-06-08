@@ -1,6 +1,7 @@
 package todos.errors
 
 import todos.errors.AppErrors
+
 import zio.json.{JsonDecoder, JsonEncoder}
 import zio.schema.{derived, Schema}
 

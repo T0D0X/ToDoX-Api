@@ -1,15 +1,16 @@
 package todos.controller
 
-import zio.*
-import zio.test.*
-import zio.http.*
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.errors.ErrorResponse
-import todos.models.*
 import todos.common.{MockService, TestRequests}
 import todos.errors.AppErrors.{EmptyFieldError, TodoNotFoundError}
+import todos.errors.ErrorResponse
+import todos.models.*
 import todos.service.{JwtService, TodoService}
+
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
+import zio.*
+import zio.http.*
 import zio.json.*
+import zio.test.*
 
 import java.time.Instant
 import java.util.UUID

@@ -1,8 +1,9 @@
 package todos.models
 
-import doobie.Meta
 import zio.json.*
 import zio.schema.Schema
+
+import doobie.Meta
 
 sealed trait Priority
 

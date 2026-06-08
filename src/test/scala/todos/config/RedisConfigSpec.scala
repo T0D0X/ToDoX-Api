@@ -1,10 +1,10 @@
 package todos.config
 
+import scala.concurrent.duration.DurationInt
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pureconfig.ConfigSource
-
-import scala.concurrent.duration.DurationInt
 
 class RedisConfigSpec extends AnyFlatSpec with Matchers {
   it should "Success" in {

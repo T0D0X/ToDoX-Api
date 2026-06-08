@@ -1,8 +1,6 @@
 package todos.common
 
 import todos.errors.AppErrors.*
-
-import java.util.UUID
 import todos.models.{
   CreateTodoRequest,
   CreateUserRequest,
@@ -13,7 +11,10 @@ import todos.models.{
   UserResponse,
 }
 import todos.service.{AuthService, JwtService, TodoService}
+
 import zio.{IO, Task, ZIO}
+
+import java.util.UUID
 
 object MockService {
   val tokenTest = "token-test"
