@@ -1,12 +1,13 @@
 package todos.redis
 
-import io.circe.parser.decode
-import io.circe.syntax.*
-import io.circe.{Decoder, Encoder}
-import io.lettuce.core.api.async.RedisAsyncCommands
-import io.micrometer.core.instrument.{Counter, MeterRegistry, Timer}
 import izumi.reflect.Tag
 import zio.{Duration, Task, ZIO, ZLayer}
+
+import io.circe.{Decoder, Encoder}
+import io.circe.parser.decode
+import io.circe.syntax.*
+import io.lettuce.core.api.async.RedisAsyncCommands
+import io.micrometer.core.instrument.{Counter, MeterRegistry, Timer}
 
 class RedisCache[K: Encoder, V: Encoder: Decoder](
     redis: RedisAsyncCommands[String, String],
@@ -15,6 +16,15 @@ class RedisCache[K: Encoder, V: Encoder: Decoder](
 ) {
   private def encodeKey(key: K): String = s"$nameSpace:${key.asJson.noSpaces}"
 
+  private val requestsCounter = Counter
+    .builder("redis_cache_requests_total")
+    .description("Total number of Redis cache requests")
+    .tag("namespace", nameSpace)
+
+  private val latencyTimer = Timer
+    .builder("redis_cache_latency")
+    .tags("namespace", nameSpace)
+
   private def metered[A](operation: Task[A], command: String): Task[A] =
     operation.either.timed.flatMap { case (duration, exit) =>
       val (status, resultZIO) = exit match {
@@ -22,16 +32,17 @@ class RedisCache[K: Encoder, V: Encoder: Decoder](
         case Left(error) => ("error", ZIO.fail(error))
       }
       ZIO.succeed {
-        Counter
-          .builder("redis_cache_requests_total")
-          .tags("namespace", nameSpace, "command", command, "status", status)
+        requestsCounter
+          .tag("command", command)
+          .tag("status", status)
           .register(registry)
           .increment()
-        Timer
-          .builder("redis_cache_latency")
-          .tags("namespace", nameSpace, "command", command, "status", status)
+
+        latencyTimer
+          .tag("command", command)
+          .tag("status", status)
           .register(registry)
-          .record(duration)
+          .record(duration.abs())
       } *> resultZIO
     }
 
