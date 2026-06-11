@@ -6,12 +6,7 @@ services:
     container_name: redis-test
     ports:
       - "6379:6379"
-    environment:
-      REDIS_USER: test_user
-      REDIS_USER_PASSWORD: test_password
-    command: >
-      redis-server
-      --user ${REDIS_USER:-test_user} on >${REDIS_PASSWORD:-test_password} ~* +@all
+    command: redis-server --requirepass test_password
 
   postgres:
     image: postgres:15
