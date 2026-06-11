@@ -1,8 +1,8 @@
 package todos.config
 
 import org.scalatest.flatspec.AnyFlatSpec
-import pureconfig.*
 import org.scalatest.matchers.should.Matchers
+import pureconfig.*
 
 class AuthConfigSpec extends AnyFlatSpec with Matchers {
   it should "Success" in {

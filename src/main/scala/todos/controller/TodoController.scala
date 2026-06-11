@@ -1,19 +1,20 @@
 package todos.controller
 
-import sttp.capabilities.WebSockets
+import todos.errors.AppErrors.TodoNotFoundError
+import todos.errors.ErrorResponse.*
+import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
+import todos.service.{JwtService, TodoService}
+import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
+
 import sttp.capabilities.zio.ZioStreams
+import sttp.capabilities.WebSockets
 import sttp.tapir.endpoint
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.server.ServerEndpoint
-import todos.errors.AppErrors.TodoNotFoundError
-import todos.errors.ErrorResponse.*
 import sttp.tapir.ztapir.*
-import todos.models.{CreateTodoRequest, TodoItem, UpdateTodoRequest}
-import todos.service.{JwtService, TodoService}
-import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
-import zio.{ZIO, ZLayer}
 import zio.*
+import zio.{ZIO, ZLayer}
 
 import java.util.UUID
 

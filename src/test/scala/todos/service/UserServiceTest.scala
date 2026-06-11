@@ -1,10 +1,11 @@
 package todos.service
 
-import todos.errors.AppErrors.RequestNotFoundError
-import todos.models.{UpdateUserDataRequest, UserData, UserIdOrLogin}
 import todos.common.CommonUtilsTests
 import todos.common.ToDoGenerators.*
+import todos.errors.AppErrors.RequestNotFoundError
+import todos.models.{UpdateUserDataRequest, UserData, UserIdOrLogin}
 import todos.repository.userimpl.UserRepository
+
 import zio.ZIO
 
 class UserServiceTest extends CommonUtilsTests {

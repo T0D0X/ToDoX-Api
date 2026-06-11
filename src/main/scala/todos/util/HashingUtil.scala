@@ -1,6 +1,7 @@
 package todos.util
 
 import zio.{Task, ZIO}
+
 import com.outr.scalapass.{Argon2PasswordFactory, PasswordFactory}
 
 object HashingUtil {

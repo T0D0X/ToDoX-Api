@@ -1,12 +1,13 @@
 package todos.service
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
+import todos.common.CommonUtilsTests
 import todos.config.JwtConfig
 import todos.errors.AppErrors.InvalidTokenError
-import todos.common.CommonUtilsTests
 
 import java.util.UUID
+
+import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.JWT
 
 class JwtServiceTest extends CommonUtilsTests {
   private val validConfig = JwtConfig(

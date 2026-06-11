@@ -1,6 +1,7 @@
 package todos.common
 
 import todos.models.{CreateTodoRequest, CreateUserRequest, Priority, TodoItem, UserData}
+
 import zio.*
 import zio.test.Gen
 

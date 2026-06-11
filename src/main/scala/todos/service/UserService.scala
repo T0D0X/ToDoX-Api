@@ -3,6 +3,7 @@ package todos.service
 import todos.errors.AppErrors.*
 import todos.models.{UserData, UserIdOrLogin, UserResponse}
 import todos.repository.userimpl.UserRepository
+
 import zio.{Task, ZIO, ZLayer}
 
 trait UserService {

@@ -1,9 +1,16 @@
 version: '3.8'
 
 services:
-  postgres-test:
+  redis:
+    image: redis:7-alpine
+    container_name: redis-test
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass test_password
+
+  postgres:
     image: postgres:15
-    container_name: postgres
+    container_name: postgres-test
     environment:
       POSTGRES_DB: todo_test
       POSTGRES_USER: test_user
@@ -18,7 +25,7 @@ services:
 
   postgres-migration:
     image: flyway/flyway:9.22-alpine
-    command: -url=jdbc:postgresql://postgres-test:5432/todo_test -user=test_user -password=test_password -schemas=public migrate
+    command: -url=jdbc:postgresql://postgres:5432/todo_test -user=test_user -password=test_password -schemas=public migrate
     volumes:
       - ./src/main/resources/db/migrations:/flyway/sql
 

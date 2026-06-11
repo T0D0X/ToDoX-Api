@@ -1,17 +1,19 @@
 package todos.controller
 
-import pureconfig.ConfigSource
-import sttp.tapir.server.ziohttp.ZioHttpInterpreter
-import todos.config.{AuthConfig, ValidationConfig}
-import todos.service.AuthService
 import todos.common.{MockService, TestRequests}
+import todos.config.{AuthConfig, ValidationConfig}
 import todos.errors.ErrorResponse
 import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserResponse}
+import todos.service.AuthService
+
+import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import zio.http.{Response, Routes, Status}
-import zio.test.*
 import zio.json.*
+import zio.test.*
 
 import java.util.UUID
+
+import pureconfig.ConfigSource
 
 object AuthControllerSpec extends ZIOSpecDefault {
   private val userResponse = UserResponse(

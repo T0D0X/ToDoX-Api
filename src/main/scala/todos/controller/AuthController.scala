@@ -1,17 +1,18 @@
 package todos.controller
 
-import sttp.capabilities.WebSockets
+import todos.config.{AuthConfig, ValidationConfig}
+import todos.errors.ErrorResponse
+import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserResponse}
+import todos.service.AuthService
+import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
+
 import sttp.capabilities.zio.ZioStreams
+import sttp.capabilities.WebSockets
 import sttp.tapir.{endpoint, ValidationResult, Validator}
 import sttp.tapir.generic.auto.*
-import todos.service.AuthService
 import sttp.tapir.json.zio.jsonBody
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.ztapir.*
-import todos.config.{AuthConfig, ValidationConfig}
-import todos.errors.ErrorResponse
-import todos.util.EndpointSupport.{standardErrorOut, toErrorResponse}
-import todos.models.{CreateUserRequest, JwtResponse, LoginRequest, UserResponse}
 import zio.{ZIO, ZLayer}
 
 class AuthController(

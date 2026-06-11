@@ -1,9 +1,10 @@
 package todos.common
 
+import zio.{Exit, Runtime, Unsafe, ZIO}
+
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import zio.{Exit, Runtime, Unsafe, ZIO}
 
 trait CommonUtilsTests extends AnyFlatSpec with Matchers with MockFactory {
   protected def unsafeRun[A](zio: ZIO[Any, Throwable, A]): A =

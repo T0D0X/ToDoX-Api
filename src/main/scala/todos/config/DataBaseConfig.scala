@@ -1,11 +1,12 @@
 package todos.config
+import zio.{Task, ZIO, ZLayer}
+import zio.interop.catz.asyncInstance
+
+import javax.sql.DataSource
+
 import doobie.{ExecutionContexts, Transactor}
 import org.postgresql.ds.PGSimpleDataSource
 import pureconfig.*
-import zio.interop.catz.asyncInstance
-import zio.{Task, ZIO, ZLayer}
-
-import javax.sql.DataSource
 
 case class DataBaseConfig(
     user: String,

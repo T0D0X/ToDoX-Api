@@ -1,13 +1,15 @@
 package todos.repository.todoimpl
 
-import doobie.*
-import doobie.implicits.*
-import doobie.postgres.implicits.*
 import todos.models.{TodoItem, UpdateTodoRequest}
+
 import zio.*
 import zio.interop.catz.*
 
 import java.util.UUID
+
+import doobie.*
+import doobie.implicits.*
+import doobie.postgres.implicits.*
 
 class PostgresTodoRepository(xa: Transactor[Task]) extends TodoRepository {
 

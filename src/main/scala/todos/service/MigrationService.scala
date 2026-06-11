@@ -1,8 +1,10 @@
 package todos.service
 
-import zio.{Task, ZIO, ZLayer}
-import org.flywaydb.core.Flyway
 import todos.config.DataBaseConfig
+
+import zio.{Task, ZIO, ZLayer}
+
+import org.flywaydb.core.Flyway
 
 trait MigrationService {
   def migrate: Task[Unit]
