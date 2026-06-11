@@ -8,7 +8,6 @@ import todos.util.HashingUtil
 
 import zio.{Task, ZIO, ZLayer}
 
-import java.time.Duration
 import java.util.UUID
 
 trait AuthService {
@@ -22,7 +21,6 @@ class AuthServiceImpl(
     postgresUserRepo: UserRepository,
     jwtService: JwtService,
 ) extends AuthService {
-  private val userCacheTTL = Duration.ofMinutes(5)
 
   private def getByLogin(login: String): Task[Option[UserData]] =
     cacheUserRepo.get(login).flatMap {
@@ -30,7 +28,7 @@ class AuthServiceImpl(
       case None =>
         postgresUserRepo.getByLogin(login).flatMap {
           case Some(user) =>
-            cacheUserRepo.set(login, user, userCacheTTL).as(Some(user))
+            cacheUserRepo.set(login, user).as(Some(user))
           case None =>
             ZIO.none
         }
@@ -46,7 +44,7 @@ class AuthServiceImpl(
         passwordHash = hash,
       )
       postgresUserRepo.createUser(data).flatMap {
-        case true => ZIO.succeed(data.toResponse) <* cacheUserRepo.set(request.login, data, userCacheTTL)
+        case true => ZIO.succeed(data.toResponse) <* cacheUserRepo.set(request.login, data)
         case false => ZIO.fail(UserAlreadyExistsError(request.login))
       }
     }

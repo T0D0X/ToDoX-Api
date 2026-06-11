@@ -14,8 +14,11 @@ class RedisConfigSpec extends AnyFlatSpec with Matchers {
         | uri = "redis://localhost:6379"
         | user = "user"
         | password = "password"
-        | timeouts = {
-        |   user = "10 seconds"
+        | ttl {
+        |   default-ttl = 1 day
+        |   custom-ttl {
+        |     test = 5 seconds
+        |   }
         | }
         |}
         |""".stripMargin
@@ -26,7 +29,10 @@ class RedisConfigSpec extends AnyFlatSpec with Matchers {
         uri = "redis://localhost:6379",
         user = "user",
         password = "password",
-        timeouts = Map("user" -> 10.seconds),
+        ttl = TtlConfig(
+          defaultTtl = 1.day,
+          customTtl = Map("test" -> 5.seconds),
+        ),
       ),
     )
   }

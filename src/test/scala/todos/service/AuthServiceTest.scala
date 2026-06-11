@@ -14,7 +14,7 @@ class AuthServiceTest extends CommonUtilsTests {
 
   "register" should "Success" in new Testing {
     userRepoPostgres.createUser.expects(*).returns(ZIO.succeed(true)).once()
-    redisMock.set.expects(*, *, *).returns(ZIO.unit).once()
+    redisMock.set.expects(*, *).returns(ZIO.unit).once()
     val result = unsafeRun(service.register(createUserRequest).exit)
 
     result.isSuccess shouldBe true
@@ -33,7 +33,7 @@ class AuthServiceTest extends CommonUtilsTests {
   "login" should "Success" in new Testing {
     redisMock.get.expects(createUserRequest.login).returns(ZIO.none).once()
     userRepoPostgres.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
-    redisMock.set.expects(*, *, *).returns(ZIO.unit).once()
+    redisMock.set.expects(*, *).returns(ZIO.unit).once()
     jwtService.generateToken.expects(user.userId).returns(ZIO.succeed(token))
     checkSuccess(service.login(loginRequest))(JwtResponse(token, user.toResponse))
   }
@@ -55,7 +55,7 @@ class AuthServiceTest extends CommonUtilsTests {
   "delete" should "Success" in new Testing {
     redisMock.get.expects(createUserRequest.login).returns(ZIO.none).once()
     userRepoPostgres.getByLogin.expects(createUserRequest.login).returns(ZIO.some(user)).once()
-    redisMock.set.expects(*, *, *).returns(ZIO.unit).once()
+    redisMock.set.expects(*, *).returns(ZIO.unit).once()
     userRepoPostgres.deleteByLogin.expects(createUserRequest.login).returns(ZIO.unit).once()
     redisMock.del.expects(*).returns(ZIO.unit).once()
     checkSuccess(service.delete(loginRequest))(())
