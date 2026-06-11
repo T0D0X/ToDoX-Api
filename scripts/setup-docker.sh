@@ -19,6 +19,12 @@ fi
 
 $COMPOSE_CMD up -d postgres redis prometheus grafana
 
+echo "⏳ Waiting for Redis..."
+until $COMPOSE_CMD exec -T redis redis-cli ping > /dev/null; do
+  sleep 1
+done
+echo "✅ Redis is ready!"
+
 echo "⏳ Waiting for PostgreSQL..."
 until $COMPOSE_CMD exec -T postgres pg_isready -U test_user -d todo_test; do
   sleep 1
