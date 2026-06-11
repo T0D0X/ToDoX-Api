@@ -6,4 +6,4 @@ reviews:
   poem: false
   auto_review:
     enabled: true
-    base_branches: [ ".*" ]
+    base_branches: [".*"]
