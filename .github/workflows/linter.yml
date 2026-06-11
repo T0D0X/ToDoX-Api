@@ -21,5 +21,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
           IGNORE_GITIGNORED_FILES: false
-          LOG_LEVEL: DEBUG
+          LOG_LEVEL: INFO
           DISABLE_ERRORS: false
