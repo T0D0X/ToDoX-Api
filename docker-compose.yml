@@ -11,7 +11,7 @@ services:
       REDIS_USER_PASSWORD: test_password
     command: >
       redis-server
-      --user test_user on >test_password ~* +@all
+      --user ${REDIS_USER:-test_user} on >${REDIS_PASSWORD:-test_password} ~* +@all
 
   postgres:
     image: postgres:15
