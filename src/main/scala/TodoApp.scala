@@ -1,10 +1,11 @@
-import todos.config.{AuthConfig, DataBaseConfig, JwtConfig, RedisConfig, ValidationConfig}
-import todos.controller.{AuthController, MetricsController, TodoController}
+import todos.config.*
+import todos.controller.*
+import todos.middleware.Middleware as CommonMiddleware
 import todos.models.UserData
 import todos.redis.{RedisCache, RedisConnection}
 import todos.repository.todoimpl.PostgresTodoRepository
 import todos.repository.userimpl.PostgresUserRepository
-import todos.service.{AuthServiceImpl, JwtServiceImpl, MigrationService, TodoServiceImpl}
+import todos.service.*
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.capabilities.WebSockets
@@ -13,9 +14,7 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import sttp.tapir.ztapir.ZServerEndpoint
 import zio.*
 import zio.http.*
-import zio.http.Server
 
-import io.micrometer.core.instrument.{Counter, Timer}
 import io.micrometer.core.instrument.binder.jvm.{
   ClassLoaderMetrics,
   JvmGcMetrics,
@@ -26,7 +25,8 @@ import io.micrometer.core.instrument.binder.jvm.{
 import io.micrometer.prometheusmetrics.{PrometheusConfig, PrometheusMeterRegistry}
 
 object TodoApp extends ZIOAppDefault {
-  type AppEnv = TodoController & AuthController & MigrationService & MetricsController & PrometheusMeterRegistry
+  type AppEnv =
+    TodoController & AuthController & MigrationService & MetricsController & PrometheusMeterRegistry & Middleware[Any]
 
   private val prometheusMeterRegistryLayer: ZLayer[Any, Nothing, PrometheusMeterRegistry] = ZLayer.succeed {
     val registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -39,59 +39,6 @@ object TodoApp extends ZIOAppDefault {
     registry
   }
 
-  def loggingMiddleware(registry: PrometheusMeterRegistry): Middleware[Any] = {
-    val timer = Timer
-      .builder("http_request_duration")
-      .description("HTTP request duration")
-    val counter = Counter
-      .builder("http_requests_total")
-      .description("Total HTTP requests")
-
-    new Middleware[Any] {
-      def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
-        routes.transform[Env1] { h =>
-          Handler.scoped[Env1] {
-            handler { (request: Request) =>
-              val method = request.method.toString()
-              val path = request.url.path.toString
-
-              val logAnnotations = Set(
-                LogAnnotation("method", method),
-                LogAnnotation("path", path),
-              )
-
-              for {
-                start <- Clock.nanoTime
-                _ <- ZIO.logAnnotate(logAnnotations) {
-                  ZIO.logInfo(s"$method $path")
-                }
-                response <- h(request)
-                end <- Clock.nanoTime
-                duration = (end - start) / 1_000_000.0
-                _ <- ZIO.succeed {
-                  counter
-                    .tag("method", method)
-                    .tag("path", path)
-                    .tag("code", response.status.code.toString)
-                    .register(registry)
-                    .increment()
-
-                  timer
-                    .tag("method", method)
-                    .tag("path", path)
-                    .register(registry)
-                    .record(duration.toLong, java.util.concurrent.TimeUnit.MILLISECONDS)
-                }
-                _ <- ZIO.logAnnotate(logAnnotations) {
-                  ZIO.logInfo(s"${duration}ms with status ${response.status.code}")
-                }
-              } yield response
-            }
-          }
-        }
-    }
-  }
-
   val appLayer: ZLayer[Any, Throwable, AppEnv] = ZLayer.make[AppEnv](
     // prometheus
     prometheusMeterRegistryLayer,
@@ -102,6 +49,7 @@ object TodoApp extends ZIOAppDefault {
     JwtConfig.live,
     AuthConfig.live,
     RedisConfig.live,
+    CorsAllowedConfig.live,
     // cache
     RedisConnection.live,
     RedisCache.live[String, UserData]("users"),
@@ -117,6 +65,8 @@ object TodoApp extends ZIOAppDefault {
     AuthController.live,
     TodoController.live,
     MetricsController.live,
+    // middleware
+    CommonMiddleware.live,
   )
 
   override def run: ZIO[Any, Throwable, Unit] = (for {
@@ -128,6 +78,8 @@ object TodoApp extends ZIOAppDefault {
 
     // metrics
     registry <- ZIO.service[PrometheusMeterRegistry]
+
+    middleware <- ZIO.service[Middleware[Any]]
 
     migration <- ZIO.service[MigrationService]
 
@@ -143,7 +95,7 @@ object TodoApp extends ZIOAppDefault {
 
     baseApp: Routes[Any, Response] = ZioHttpInterpreter().toHttp(allEndpoints)
 
-    finalApp = baseApp @@ loggingMiddleware(registry)
+    finalApp = baseApp @@ middleware
 
     _ <- Server
       .serve(finalApp)
