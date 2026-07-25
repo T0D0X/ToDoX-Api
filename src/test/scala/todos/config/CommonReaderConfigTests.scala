@@ -1,8 +1,7 @@
-package todos.common
+package todos.config
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.Assertion
 import pureconfig.*
 
 trait CommonReaderConfigTests[T: ConfigReader] extends AnyFlatSpec with Matchers {
