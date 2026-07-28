@@ -12,7 +12,7 @@ class AuthConfigSpec extends CommonReaderConfigTests[AuthConfig] {
   )
   failureTest(
     conf = """
-             | auth {
+             | {
              |  authToken = "inc_token"
              | }
              |""".stripMargin,

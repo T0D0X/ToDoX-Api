@@ -1,7 +1,7 @@
 package todos.middleware
 
 import zio.{Clock, LogAnnotation, ZIO}
-import zio.http.{handler, Handler, Middleware, Request, Routes}
+import zio.http.{handler, Handler, Middleware, Path, Request, Routes}
 
 import io.micrometer.core.instrument.{Counter, Timer}
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
@@ -13,6 +13,15 @@ object LoggingMiddleware {
   private val counter = Counter
     .builder("http_requests_total")
     .description("Total HTTP requests")
+  private def normalizePath(path: Path): String = {
+    val segments = path.segments.filter(_.nonEmpty)
+    val normalized = segments.map {
+      case seg if seg.matches("\\d+") => "{id}"
+      case seg if seg.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}") => "{id}"
+      case other => other
+    }
+    "/" + normalized.mkString("/")
+  }
 
   def apply(registry: PrometheusMeterRegistry) = new Middleware[Any] {
     def apply[Env1 <: Any, Err](routes: Routes[Env1, Err]): Routes[Env1, Err] =
@@ -20,7 +29,7 @@ object LoggingMiddleware {
         Handler.scoped[Env1] {
           handler { (request: Request) =>
             val method = request.method.toString()
-            val path = request.url.path.toString
+            val path = normalizePath(request.url.path)
 
             val logAnnotations = Set(
               LogAnnotation("method", method),

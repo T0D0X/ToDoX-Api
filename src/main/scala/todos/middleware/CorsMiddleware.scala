@@ -10,7 +10,7 @@ object CorsMiddleware {
   private def make(config: CorsAllowedConfig) =
     CorsConfig(
       allowedOrigin = { origin =>
-        val originValue = origin.toString
+        val originValue = origin.renderedValue
         Option.when(config.origins.contains(originValue))(AccessControlAllowOrigin.Specific(origin))
       },
       allowedMethods = AccessControlAllowMethods(config.methods.toSeq: _*),
